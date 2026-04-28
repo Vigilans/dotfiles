@@ -34,7 +34,7 @@ Profile management:
 
 Installation:
   status      Show detailed install status for a profile
-  install     Install a profile (prepare + package + stow)
+  install     Install a profile (prepare + package + resolve conflicts + install)
   uninstall   Uninstall a profile (unstow from $HOME)
   upgrade     Upgrade an installed profile
 
@@ -46,30 +46,18 @@ Shell integration:
   completion  Output shell completion script (bash|zsh)
 ```
 
-## Adding a new command
+## Install flow & conflict resolution
 
-1. Add a `dotfiles_<verb>()` function in `dotfiles-lib.sh` with all logic.
-2. Add a `cmd_<verb>()` wrapper in `dotfiles-cli.sh` that validates args and calls the lib function.
-3. Add a `case` entry in the dispatch block.
-4. Add it to the help text under the right section.
-5. Add it to both completion files (`dotfiles.bash` and `dotfiles.zsh`).
+`dotfiles install <profile>` runs four stages: `prepare → package → resolve conflicts → install`.
 
-## Library function conventions
+When existing files in `$HOME` would conflict with stow, `_dotfiles_resolve_conflicts` prompts per file:
 
-- **Naming**: `dotfiles_<verb>` for public functions, `_dotfiles_<name>` for internal helpers.
-- **Profile loading**: use `dotfiles_run_phase <profile> <function>` to source a profile.sh and call a lifecycle function in a subshell. This isolates side effects (cd, env changes).
-- **Metadata reading**: use `dotfiles_load_profile <name>` which sources in a subshell with `set +u` and emits tab-separated fields. Returns non-zero if profile has no `name` variable.
-- **Status checking**: `dotfiles_profile_status <name>` returns one of: `installed`, `not installed`, `partial`, `no dotfiles`. It uses `_dotfiles_check_tree` which recursively walks the dotfiles/ directory and checks whether corresponding $HOME paths are symlinks pointing back to the profile (handling stow's directory folding).
-- **Profile resolution**: `dotfiles_resolve_profiles [profile...]` takes profile names (or discovers all if none given), filters by current OS, auto-includes dependencies, and returns a topologically sorted list. Used by `bootstrap.sh`; caller is responsible for parsing `DOTFILES_PROFILES` from `.env`.
-- **Errors**: print to stderr and `return 1`. The CLI translates non-zero returns to appropriate exit codes.
+- `[d]iff` — preview with `git diff --no-index` (repeatable, returns to prompt)
+- `[b]ackup` — move HOME file to `$DOTFILES_ROOT/.backups/<profile>-<timestamp>/`
+- `[k]eep` — copy HOME content into dotfiles dir, remove HOME file (git preserves original)
+- `[M]erge` (default) — `_dotfiles_resolve_merge` synthesizes a base from common lines (`diff -u | grep '^ '`), runs `git merge-file` to produce conflict markers, opens `$EDITOR` for resolution, writes result to dotfiles dir
 
-## CLI conventions
-
-- `set -euo pipefail` at the top.
-- DOTFILES_ROOT resolved via `realpath` on `BASH_SOURCE` to handle the `~/.local/bin/dotfiles` symlink.
-- Exit code 2 for usage errors, 1 for runtime errors, 0 for success.
-- Commands that accept multiple profiles loop over `"$@"`.
-- Destructive operations (`remove`) check install status and refuse if installed.
+After all conflicts are resolved, the profile's `install()` phase runs stow without conflicts.
 
 ## Environment loading
 
@@ -83,3 +71,30 @@ All profiles also source this file, so lib functions are always available inside
 ## Template system
 
 `scripts/templates/profile.sh` contains `__NAME__`, `__DESCRIPTION__`, `__OS__` placeholders. `dotfiles_create_profile` replaces them via `sed` and auto-detects the current OS via `dotfiles_current_os`.
+
+## Adding a new command
+
+1. Add a `dotfiles_<verb>()` function in `dotfiles-lib.sh` with all logic.
+2. Add a `cmd_<verb>()` wrapper in `dotfiles-cli.sh` that validates args and calls the lib function.
+3. Add a `case` entry in the dispatch block.
+4. Add it to the help text under the right section.
+5. Add it to both completion files (`dotfiles.bash` and `dotfiles.zsh`).
+
+## Conventions
+
+### Library functions
+
+- **Naming**: `dotfiles_<verb>` for public functions, `_dotfiles_<name>` for internal helpers.
+- **Profile loading**: use `dotfiles_run_phase <profile> <function>` to source a profile.sh and call a lifecycle function in a subshell. This isolates side effects (cd, env changes).
+- **Metadata reading**: use `dotfiles_load_profile <name>` which sources in a subshell with `set +u` and emits tab-separated fields. Returns non-zero if profile has no `name` variable.
+- **Status checking**: `dotfiles_profile_status <name>` returns one of: `installed`, `not installed`, `partial`, `no dotfiles`. It uses `_dotfiles_check_tree` which recursively walks the dotfiles/ directory and checks whether corresponding $HOME paths are symlinks pointing back to the profile (handling stow's directory folding).
+- **Profile resolution**: `dotfiles_resolve_profiles [profile...]` takes profile names (or discovers all if none given), filters by current OS, auto-includes dependencies, and returns a topologically sorted list. Used by `bootstrap.sh`; caller is responsible for parsing `DOTFILES_PROFILES` from `.env`.
+- **Errors**: print to stderr and `return 1`. The CLI translates non-zero returns to appropriate exit codes.
+
+### CLI
+
+- `set -euo pipefail` at the top.
+- DOTFILES_ROOT resolved via `realpath` on `BASH_SOURCE` to handle the `~/.local/bin/dotfiles` symlink.
+- Exit code 2 for usage errors, 1 for runtime errors, 0 for success.
+- Commands that accept multiple profiles loop over `"$@"`.
+- Destructive operations (`remove`) check install status and refuse if installed.

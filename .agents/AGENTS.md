@@ -43,7 +43,7 @@ dotfiles import <name> <path>...        # Import existing dotfiles (stow --adopt
 
 # Installation
 dotfiles status <name>                  # Show detailed install status
-dotfiles install <name>...              # prepare + package + stow
+dotfiles install <name>...              # prepare + package + resolve conflicts + install
 dotfiles uninstall <name>...            # Unstow from $HOME
 dotfiles upgrade <name>...              # Upgrade installed profile
 
@@ -94,7 +94,7 @@ Stow creates directory-level symlinks (folding), so edits under `profiles/{name}
 
 ## Working in the repo
 
-- `tmp/` and `build/` are gitignored. Per-profile `.gitignore` files exclude build outputs (e.g. `dotfiles/.config/tmux/plugins/`).
+- `tmp/`, `build/`, and `.backups/` are gitignored. Per-profile `.gitignore` files exclude build outputs (e.g. `dotfiles/.config/tmux/plugins/`).
 - `.env` is gitignored; `.env.example` is committed.
 - There is no test suite, linter config, or CI in this repo.
 

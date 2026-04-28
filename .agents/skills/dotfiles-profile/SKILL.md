@@ -72,8 +72,7 @@ The trailing `if [ "$0" = "$BASH_SOURCE" ]; then "$@"; fi` makes phases invokabl
 |---|---|---|
 | `prepare` | Install system dependencies (brew, apt, pacman) | Yes (package managers handle this) |
 | `package` | Populate `dotfiles/` from `build/` artifacts, clone plugins | Yes (skip if exists) |
-| `install` | `stow` + start services + post-install hooks | Re-run safe, stow is idempotent |
-| `upgrade` | Re-prepare + update plugins + reload configs | Yes |
+| `install` | CLI resolves stow conflicts first (d/b/k/m prompt), then profile's `stow` + start services | Re-run safe, stow is idempotent || `upgrade` | Re-prepare + update plugins + reload configs | Yes |
 | `uninstall` | Stop services + `stow -D` to unlink | Yes |
 
 ## Stow conventions
@@ -108,12 +107,14 @@ Folded directories are why new files added inside an already-stowed directory ap
 
 ### Conflict resolution
 
-When stow reports "existing target is neither a link nor a directory":
+When `dotfiles install` detects existing files that would conflict with stow, it prompts per file before the profile's `install()` runs:
 
-1. Check `ls -la` on the conflicting path — real file, stale symlink, or another profile's link?
-2. Real user file → `dotfiles import <profile> <path>` to adopt it
-3. Stale symlink → `stow -D` first, then re-stow
-4. Another profile's link → one of the profiles has the wrong file
+- `[d]iff` — preview differences with `git diff --no-index` (repeatable)
+- `[b]ackup` — move HOME file to `$DOTFILES_ROOT/.backups/<profile>-<timestamp>/`
+- `[k]eep` — copy HOME content into dotfiles dir, remove HOME file (original dotfiles version preserved in git)
+- `[M]erge` (default) — three-way merge using a synthetic base (common lines extracted via `diff -u`), produces conflict markers, opens `$EDITOR` for resolution, writes result to dotfiles dir
+
+After resolution, stow runs without conflicts. Manual troubleshooting is only needed for edge cases outside the installer flow (e.g. stale symlinks from another profile).
 
 ## Profile categories
 

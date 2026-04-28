@@ -291,6 +291,88 @@ dotfiles_uninstall() {
     dotfiles_run_phase "$profile_name" uninstall
 }
 
+_dotfiles_stow_conflicts() {
+    local profile_dir="$1"
+    stow -n -v -d "$profile_dir" -t "$HOME" dotfiles 2>&1 \
+        | grep 'existing target' \
+        | sed 's/.*existing target //' \
+        | sed 's/ since .*//'
+}
+
+_dotfiles_resolve_merge() {
+    local home_file="$1"
+    local dotfiles_file="$2"
+
+    local tmp=$(mktemp)
+    local base=$(mktemp)
+    # Synthesize base from common lines for three-way merge without a real ancestor
+    diff -u "$home_file" "$dotfiles_file" 2>/dev/null | grep '^ ' | sed 's/^ //' > "$base" || true
+    cp "$home_file" "$tmp"
+    git merge-file "$tmp" "$base" "$dotfiles_file" 2>/dev/null || true
+    ${EDITOR:-vim} "$tmp"
+    cp "$tmp" "$dotfiles_file"
+    rm -f "$tmp" "$base"
+}
+
+_dotfiles_resolve_conflicts() {
+    local profile_name="$1"
+    local profile_dir="$DOTFILES_ROOT/profiles/$profile_name"
+    local dotfiles_dir="$profile_dir/dotfiles"
+
+    local conflicts
+    conflicts=$(_dotfiles_stow_conflicts "$profile_dir" || true)
+    [ -z "$conflicts" ] && return 0
+
+    local backup_dir="$DOTFILES_ROOT/.backups/${profile_name}-$(date +%Y%m%d-%H%M%S)"
+    local backed_up=0
+
+    local rel_path
+    while IFS= read -r rel_path; do
+        [ -z "$rel_path" ] && continue
+        local home_file="$HOME/$rel_path"
+        local dotfiles_file="$dotfiles_dir/$rel_path"
+
+        echo ""
+        echo "CONFLICT: ~/$rel_path"
+
+        local choice
+        while true; do
+            printf '  [d]iff  [b]ackup  [k]eep  [M]erge: '
+            read -r choice </dev/tty
+            choice="${choice:-m}"
+            case "$choice" in
+                d|D)
+                    git diff --no-index -- "$dotfiles_file" "$home_file" || true
+                    ;;
+                b|B)
+                    mkdir -p "$backup_dir/$(dirname "$rel_path")"
+                    mv "$home_file" "$backup_dir/$rel_path"
+                    backed_up=1
+                    break
+                    ;;
+                k|K)
+                    cp "$home_file" "$dotfiles_file"
+                    rm "$home_file"
+                    break
+                    ;;
+                m|M)
+                    _dotfiles_resolve_merge "$home_file" "$dotfiles_file"
+                    rm "$home_file"
+                    break
+                    ;;
+                *)
+                    echo "  Invalid choice. Use d/b/k/m (default: m)"
+                    ;;
+            esac
+        done
+    done <<< "$conflicts"
+
+    if [ "$backed_up" -eq 1 ]; then
+        echo ""
+        echo "Backups saved to $backup_dir/"
+    fi
+}
+
 dotfiles_install() {
     local profile_name="$1"
     local profile_dir="$DOTFILES_ROOT/profiles/$profile_name"
@@ -309,6 +391,8 @@ dotfiles_install() {
 
     echo "[$profile_name] package"
     dotfiles_run_phase "$profile_name" package
+
+    _dotfiles_resolve_conflicts "$profile_name"
 
     echo "[$profile_name] install"
     dotfiles_run_phase "$profile_name" install

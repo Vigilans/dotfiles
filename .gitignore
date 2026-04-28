@@ -1,4 +1,5 @@
 build/
 tmp/
+.backups/
 .env
 .DS_Store
