@@ -2,15 +2,25 @@
 # Profile management
 # ---------------------------------------------------------------------------
 
+dotfiles_profile_dir() {
+    local name="$1"
+    local dir
+    for dir in "$DOTFILES_ROOT/profiles/$name" "$DOTFILES_ROOT/profiles/local/$name"; do
+        [ -d "$dir" ] && { echo "$dir"; return 0; }
+    done
+    return 1
+}
+
 dotfiles_discover_profiles() {
     local dir
-    for dir in "$DOTFILES_ROOT"/profiles/*/; do
+    for dir in "$DOTFILES_ROOT"/profiles/*/ "$DOTFILES_ROOT"/profiles/local/*/; do
         [ -f "$dir/profile.sh" ] && basename "$dir"
     done
 }
 
 dotfiles_load_profile() {
-    local profile_dir="$DOTFILES_ROOT/profiles/$1"
+    local profile_dir
+    profile_dir=$(dotfiles_profile_dir "$1") || return 1
     [ -f "$profile_dir/profile.sh" ] || return 1
     (
         set +u
@@ -26,8 +36,9 @@ dotfiles_load_profile() {
 
 dotfiles_profile_status() {
     local profile_name="$1"
-    local dotfiles_dir
-    dotfiles_dir=$(realpath "$DOTFILES_ROOT/profiles/$profile_name/dotfiles" 2>/dev/null)
+    local profile_dir dotfiles_dir
+    profile_dir=$(dotfiles_profile_dir "$profile_name") || { echo "no dotfiles"; return; }
+    dotfiles_dir=$(realpath "$profile_dir/dotfiles" 2>/dev/null)
     [ -d "$dotfiles_dir" ] || { echo "no dotfiles"; return; }
 
     local _found=0 _missing=0
@@ -70,7 +81,8 @@ _dotfiles_check_tree() {
 
 dotfiles_status_detail() {
     local profile_name="$1"
-    local profile_dir="$DOTFILES_ROOT/profiles/$profile_name"
+    local profile_dir
+    profile_dir=$(dotfiles_profile_dir "$profile_name") || { echo "Profile '$profile_name' not found" >&2; return 1; }
 
     [ -f "$profile_dir/profile.sh" ] || { echo "Profile '$profile_name' not found" >&2; return 1; }
 
@@ -229,9 +241,8 @@ dotfiles_create_profile() {
 
 dotfiles_delete_profile() {
     local profile_name="$1"
-    local profile_dir="$DOTFILES_ROOT/profiles/$profile_name"
-
-    [ -d "$profile_dir" ] || { echo "Profile '$profile_name' does not exist" >&2; return 1; }
+    local profile_dir
+    profile_dir=$(dotfiles_profile_dir "$profile_name") || { echo "Profile '$profile_name' does not exist" >&2; return 1; }
 
     local status
     status=$(dotfiles_profile_status "$profile_name")
@@ -246,9 +257,8 @@ dotfiles_delete_profile() {
 dotfiles_import() {
     local profile_name="$1"
     shift
-    local profile_dir="$DOTFILES_ROOT/profiles/$profile_name"
-
-    [ -d "$profile_dir" ] || { echo "Profile '$profile_name' does not exist. Run 'dotfiles create $profile_name' first." >&2; return 1; }
+    local profile_dir
+    profile_dir=$(dotfiles_profile_dir "$profile_name") || { echo "Profile '$profile_name' does not exist. Run 'dotfiles create $profile_name' first." >&2; return 1; }
 
     local path
     for path in "$@"; do
@@ -272,7 +282,8 @@ dotfiles_import() {
 dotfiles_run_phase() {
     local profile_name="$1"
     local phase="$2"
-    local profile_dir="$DOTFILES_ROOT/profiles/$profile_name"
+    local profile_dir
+    profile_dir=$(dotfiles_profile_dir "$profile_name") || { echo "Profile '$profile_name' not found" >&2; return 1; }
 
     [ -f "$profile_dir/profile.sh" ] || { echo "Profile '$profile_name' not found" >&2; return 1; }
 
@@ -325,7 +336,8 @@ _dotfiles_resolve_merge() {
 
 _dotfiles_resolve_conflicts() {
     local profile_name="$1"
-    local profile_dir="$DOTFILES_ROOT/profiles/$profile_name"
+    local profile_dir
+    profile_dir=$(dotfiles_profile_dir "$profile_name") || return 0
     local dotfiles_dir="$profile_dir/dotfiles"
 
     local conflicts
@@ -384,7 +396,8 @@ _dotfiles_resolve_conflicts() {
 
 dotfiles_install() {
     local profile_name="$1"
-    local profile_dir="$DOTFILES_ROOT/profiles/$profile_name"
+    local profile_dir
+    profile_dir=$(dotfiles_profile_dir "$profile_name") || { echo "Profile '$profile_name' not found" >&2; return 1; }
 
     [ -f "$profile_dir/profile.sh" ] || { echo "Profile '$profile_name' not found" >&2; return 1; }
 
