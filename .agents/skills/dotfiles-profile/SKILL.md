@@ -116,6 +116,16 @@ When `dotfiles install` detects existing files that would conflict with stow, it
 
 After resolution, stow runs without conflicts. Manual troubleshooting is only needed for edge cases outside the installer flow (e.g. stale symlinks from another profile).
 
+## Profile placement
+
+Profiles can live in three locations, all discoverable by `dotfiles list` and the lifecycle commands:
+
+- **`profiles/<name>/`** — tracked in the main repo. Default for `dotfiles create`.
+- **`profiles/local/<name>/`** — gitignored. Use for machine-only profiles you don't want committed.
+- **External clone** — set `DOTFILES_EXTRA_PROFILES="<name>=<git-url>"` in `.env` and `bootstrap.sh` clones into `profiles/<name>/`. The cloned `.git/` self-protects from the parent repo. Useful for managing secrets in a separate **private** repo without the URL ever entering the public dotfiles tree.
+
+If the cloned external repo isn't already a framework profile (no `name=` and `supported_os=` in its `profile.sh`), bootstrap wraps its contents under `dotfiles/` and auto-generates a `profile.sh` from the standard template.
+
 ## Profile categories
 
 - **System** — OS-level settings (`macos`, `linux`)

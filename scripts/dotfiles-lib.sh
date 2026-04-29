@@ -11,6 +11,13 @@ dotfiles_profile_dir() {
     return 1
 }
 
+dotfiles_is_profile_dir() {
+    local f="$1/profile.sh"
+    [ -f "$f" ] \
+        && grep -q '^name=' "$f" \
+        && grep -q '^supported_os=' "$f"
+}
+
 dotfiles_discover_profiles() {
     local dir
     for dir in "$DOTFILES_ROOT"/profiles/*/ "$DOTFILES_ROOT"/profiles/local/*/; do

@@ -68,6 +68,31 @@ Stow folds at the directory level, so edits under `profiles/<name>/dotfiles/`
 are reflected in `$HOME` immediately. Re-stow only when you add a new
 top-level path.
 
+## Adding a profile
+
+**From scratch** — scaffold from template:
+```bash
+dotfiles create mynvim "My Neovim setup"
+```
+
+**From an external repo** — set `DOTFILES_EXTRA_PROFILES` in `.env` to clone
+on bootstrap. Useful for managing secrets in a separate **private** repo
+without coupling it to the public dotfiles framework — the URL never lands
+in the public repo, and you can fork or change vault providers freely:
+```bash
+DOTFILES_EXTRA_PROFILES="
+    secrets=git@github.com:you/dotfiles-secrets.git
+"
+```
+The cloned repo is treated as a full profile if it contains a framework
+`profile.sh` at the root (with `name=` and `supported_os=`); otherwise its
+contents are wrapped under `dotfiles/` and a `profile.sh` is auto-generated
+from the template.
+
+**Local-only** — drop a profile under `profiles/local/<name>/`. The
+directory is gitignored. Lifecycle and `dotfiles list` treat it like any
+other profile.
+
 ## License
 
 [MIT](LICENSE)

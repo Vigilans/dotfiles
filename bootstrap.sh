@@ -5,6 +5,30 @@ set -euo pipefail
 export DOTFILES_ROOT="$( cd "$( dirname -- "${BASH_SOURCE:-$0}" )" >/dev/null 2>&1 && pwd )"; cd "$DOTFILES_ROOT"
 source "$DOTFILES_ROOT/scripts/dotfiles-rc.sh"
 
+# Clone external profiles
+if [ -n "${DOTFILES_EXTRA_PROFILES:-}" ]; then
+    IFS=',' read -ra _extras <<< "${DOTFILES_EXTRA_PROFILES//[[:space:]]/}"
+    _extra_names=()
+    for entry in "${_extras[@]}"; do
+        IFS='=' read -r _name _url <<< "$entry"
+        _extra_names+=("$_name")
+        _target="$DOTFILES_ROOT/profiles/$_name"
+        if [ -d "$_target" ]; then
+            echo "[$_name] already exists, skipping clone"
+        else
+            echo "[$_name] cloning from $_url"
+            git clone "$_url" "$_target"
+            if ! dotfiles_is_profile_dir "$_target"; then
+                mv "$_target" "$_target.dotfiles"
+                mkdir "$_target"
+                mv "$_target.dotfiles" "$_target/dotfiles"
+                dotfiles_create_profile "$_name" "External profile (auto-generated)"
+            fi
+        fi
+    done
+    DOTFILES_PROFILES="${DOTFILES_PROFILES:+$DOTFILES_PROFILES,}$(IFS=,; echo "${_extra_names[*]}")"
+fi
+
 # Install profiles
 if [ -n "${DOTFILES_PROFILES:-}" ]; then
     echo "OS: $(dotfiles_current_os)"

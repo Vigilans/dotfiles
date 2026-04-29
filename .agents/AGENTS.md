@@ -22,12 +22,13 @@ dotfiles/
 │       ├── dotfiles.bash               # Bash completion
 │       └── dotfiles.zsh                # Zsh completion
 └── profiles/
-    ├── {name}/
+    ├── {name}/                        # Standard profile (tracked, or external clone via DOTFILES_EXTRA_PROFILES)
     │   ├── profile.sh                  # Lifecycle script (see below)
     │   ├── dotfiles/                   # Mirrors $HOME — stowed into ~ on install
     │   │   └── .config/{app}/...
     │   └── build/                      # Profile-local build artifacts (gitignored)
-    └── ...
+    └── local/                          # Gitignored escape hatch for local-only profiles
+        └── {name}/...
 ```
 
 ## CLI (`dotfiles`)
@@ -72,7 +73,7 @@ Reference: [profiles/tmux/profile.sh](profiles/tmux/profile.sh).
 `.env` (gitignored, copy from `.env.example`) drives behavior; auto-exported via `set -a` in `dotfiles-rc.sh`.
 
 - `DOTFILES_PROFILES` — comma-separated profile list
-- `HOMEBREW_NO_AUTO_UPDATE` — skip Homebrew auto-update during installs
+- `DOTFILES_EXTRA_PROFILES` — `name=url` pairs (whitespace-tolerant); bootstrap clones each into `profiles/<name>/` and appends names to `DOTFILES_PROFILES`. Used to manage secrets in a separate private repo without coupling to the public framework.
 - Profile-specific vars: prefix with profile name (e.g. `YABAI_*`)
 
 Runtime exports (set by the framework, not `.env`):
@@ -94,7 +95,7 @@ Stow creates directory-level symlinks (folding), so edits under `profiles/{name}
 
 ## Working in the repo
 
-- `tmp/`, `build/`, and `.backups/` are gitignored. Per-profile `.gitignore` files exclude build outputs (e.g. `dotfiles/.config/tmux/plugins/`).
+- `tmp/`, `build/`, `.backups/`, and `profiles/local/` are gitignored. Per-profile `.gitignore` files exclude build outputs (e.g. `dotfiles/.config/tmux/plugins/`).
 - `.env` is gitignored; `.env.example` is committed.
 - There is no test suite, linter config, or CI in this repo.
 

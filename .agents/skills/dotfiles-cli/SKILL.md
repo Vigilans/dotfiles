@@ -21,7 +21,10 @@ scripts/
     └── dotfiles.zsh            # Zsh completion
 ```
 
-`bootstrap.sh` at the repo root reads `DOTFILES_PROFILES` from `.env`, resolves dependencies and OS filtering via `dotfiles_resolve_profiles`, installs each profile, then symlinks the CLI to `~/.local/bin/dotfiles`.
+`bootstrap.sh` at the repo root:
+1. Parses `DOTFILES_EXTRA_PROFILES` (whitespace-tolerant `name=url` pairs) and clones each into `profiles/<name>/`. If the cloned repo isn't a framework profile (verified by `dotfiles_is_profile_dir` grep on `name=` and `supported_os=`), its contents are wrapped under `dotfiles/` and a `profile.sh` is generated from the standard template via `dotfiles_create_profile`. Detection uses grep, not source — remote code only runs at install phase.
+2. Appends extra profile names to `DOTFILES_PROFILES`, resolves dependencies and OS filtering via `dotfiles_resolve_profiles`, installs each profile in dependency order.
+3. Symlinks the CLI to `~/.local/bin/dotfiles`.
 
 ## Current commands
 
@@ -68,6 +71,14 @@ After all conflicts are resolved, the profile's `install()` phase runs stow with
 
 All profiles also source this file, so lib functions are always available inside lifecycle functions.
 
+## Profile discovery
+
+Profiles live in two places:
+- `profiles/<name>/` — tracked in the main repo, or cloned via `DOTFILES_EXTRA_PROFILES` (self-protecting via nested `.git/`)
+- `profiles/local/<name>/` — gitignored escape hatch for local-only profiles
+
+`dotfiles_discover_profiles` scans both paths. `dotfiles_profile_dir <name>` resolves a name to a directory by searching the two locations in order, used by every lib function that needs the profile path.
+
 ## Template system
 
 `scripts/templates/profile.sh` contains `__NAME__`, `__DESCRIPTION__`, `__OS__` placeholders. `dotfiles_create_profile` replaces them via `sed` and auto-detects the current OS via `dotfiles_current_os`.
@@ -85,6 +96,8 @@ All profiles also source this file, so lib functions are always available inside
 ### Library functions
 
 - **Naming**: `dotfiles_<verb>` for public functions, `_dotfiles_<name>` for internal helpers.
+- **Profile path resolution**: use `dotfiles_profile_dir <name>` to map a profile name to its directory. It searches `profiles/<name>` then `profiles/local/<name>`. All lib functions that take a profile name use this.
+- **Framework profile detection**: `dotfiles_is_profile_dir <dir>` greps for `name=` and `supported_os=` in `<dir>/profile.sh` to verify it's a framework profile (not e.g. a POSIX `profile.sh` that just sets PATH). Used by bootstrap to decide whether a cloned repo needs wrapping. Detection is grep-based rather than source-based to avoid running unintended remote code.
 - **Profile loading**: use `dotfiles_run_phase <profile> <function>` to source a profile.sh and call a lifecycle function in a subshell. This isolates side effects (cd, env changes).
 - **Metadata reading**: use `dotfiles_load_profile <name>` which sources in a subshell with `set +u` and emits tab-separated fields. Returns non-zero if profile has no `name` variable.
 - **Status checking**: `dotfiles_profile_status <name>` returns one of: `installed`, `not installed`, `partial`, `no dotfiles`. It uses `_dotfiles_check_tree` which recursively walks the dotfiles/ directory and checks whether corresponding $HOME paths are symlinks pointing back to the profile (handling stow's directory folding).
