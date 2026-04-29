@@ -17,7 +17,10 @@ dotfiles_load_profile() {
         source "$profile_dir/profile.sh" 2>/dev/null
         [ -z "$name" ] && return 1
         printf '%s\t%s\t%s\t%s' \
-            "$name" "${description%%$'\n'*}" "${supported_os[*]}" "${depends[*]}"
+            "$name" \
+            "${description%%$'\n'*}" \
+            "$(printf '%s\n' "${supported_os[@]}" | sort | paste -sd ' ' -)" \
+            "${depends[*]}"
     )
 }
 
@@ -254,7 +257,13 @@ dotfiles_import() {
         local rel="${abs#$HOME/}"
 
         mkdir -p "$profile_dir/dotfiles/$(dirname "$rel")"
-        touch "$profile_dir/dotfiles/$rel"
+
+        if [ -d "$expanded" ] && [ ! -L "$expanded" ]; then
+            [ -e "$profile_dir/dotfiles/$rel" ] && { echo "Already exists in profile: $rel" >&2; continue; }
+            mv "$expanded" "$profile_dir/dotfiles/$rel"
+        else
+            touch "$profile_dir/dotfiles/$rel"
+        fi
     done
 
     stow --adopt -v -d "$profile_dir" -t "$HOME" dotfiles

@@ -7,7 +7,7 @@ export DOTFILES_ROOT="$(cd "$(dirname -- "$(realpath "${BASH_SOURCE:-$0}")")/.."
 source "$DOTFILES_ROOT/scripts/dotfiles-rc.sh"
 
 cmd_list() {
-    printf '%-15s %-15s %-15s %s\n' "PROFILE" "STATUS" "OS" "DESCRIPTION"
+    printf '%-15s %-15s %-20s %s\n' "PROFILE" "STATUS" "OS" "DESCRIPTION"
 
     local profile
     for profile in $(dotfiles_discover_profiles); do
@@ -17,7 +17,7 @@ cmd_list() {
         status=$(dotfiles_profile_status "$profile")
 
         IFS=$'\t' read -r p_name p_desc p_os p_deps <<< "$metadata"
-        printf '%-15s %-15s %-15s %s\n' "$p_name" "$status" "$p_os" "$p_desc"
+        printf '%-15s %-15s %-20s %s\n' "$p_name" "$status" "$p_os" "$p_desc"
     done
 }
 
