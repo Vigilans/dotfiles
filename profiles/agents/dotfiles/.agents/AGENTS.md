@@ -91,6 +91,8 @@ This file provides user-level preferences that apply across all projects and rep
 
 ### Partial staging workflow
 
+**Trigger check**: any request to stage/unstage **part of a single file's changes** (not whole files) — phrases like "commit/stage 这个文件的某部分", "把某些部分排除出这次 commit", "exclude some lines from a staged file", "split this file's changes across commits" — STOP and follow this section. Do not reflexively reach for `git restore --staged` + edit + `git add`.
+
 When the user wants to stage or unstage part of a file's changes (not the whole file), **MUST NOT** edit the file to the desired state and then `git add` the whole file. Instead, build a selected patch from a base diff and apply it to the index without touching the working tree.
 
 #### Stage selected changes
