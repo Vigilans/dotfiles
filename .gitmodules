@@ -1,0 +1,3 @@
+[submodule "profiles/shell/dotfiles/.config/shell"]
+	path = profiles/shell/dotfiles/.config/shell
+	url = https://github.com/Vigilans/shell.git
