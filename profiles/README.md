@@ -66,6 +66,24 @@ Example: the `secrets` profile is cloned from a private repo via `DOTFILES_EXTRA
 before=(agents)
 ```
 
+## Helpers
+
+Framework-provided utilities, reusable across profiles.
+
+### `render_templates_<engine> <src> <dst>`
+
+Walk `<src>` tree, render every `*.j2` file (Jinja-family syntax) into the corresponding path under `<dst>` (suffix stripped, non-`.j2` files skipped). Render context is `process.env`, so vars published via the [.env channel](#env-channel) become `{{ VAR_NAME }}` in templates.
+
+Profile picks the engine matching its toolchain:
+
+| Engine | Helper | Loader |
+|---|---|---|
+| Nunjucks (Node) | `render_templates_nunjucks` | `npx -p nunjucks@^3` |
+| Jinja2 (Python) | (add when needed) | `uv run --with jinja2` |
+| gomplate (Go) | (add when needed) | `go run github.com/hairyhenderson/gomplate/v4/cmd/gomplate@latest` |
+
+Engines are loaded ephemerally — no committed `package.json`, `node_modules`, `requirements.txt`, or `go.sum`.
+
 ## Stow
 
 Standard invocations:

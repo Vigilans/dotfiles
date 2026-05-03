@@ -59,7 +59,7 @@ Each profile declares metadata and defines lifecycle functions:
 
 - `name`, `description`, `supported_os=(...)`, `depends=(...)`, `after=(...)`, `before=(...)`
 - `prepare()` — install upstream packages (brew, apt, pacman, github-release)
-- `package()` — assemble files in `dotfiles/` from `build/` artifacts before stowing
+- `package()` — assemble files in `dotfiles/`: download into `build/`, clone plugins, or render templates via `render_templates_<engine>` helpers
 - `install()` — `stow -v -d "$PROFILE_ROOT" -t "$HOME" dotfiles`, then start services
 - `upgrade()` — re-run `prepare`, update plugins, reload configs
 - `uninstall()` — stop services, then `stow -v -D -d "$PROFILE_ROOT" -t "$HOME" dotfiles`

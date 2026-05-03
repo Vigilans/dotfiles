@@ -469,3 +469,38 @@ dotfiles_upgrade() {
     echo "[$profile_name] upgrade"
     dotfiles_run_phase "$profile_name" upgrade
 }
+
+# Render Nunjucks templates from <src> tree to <dst> tree, mirroring structure
+# and stripping the .j2 suffix. Non-.j2 files are ignored. Context is
+# process.env — vars published via the .env channel are accessible as
+# {{ VAR_NAME }} in templates.
+#
+# nunjucks is loaded ephemerally via npx (cached in ~/.npm/_npx after first
+# call). npx adds the install dir to PATH but not to node's require resolution,
+# so we extract _npx/<hash>/node_modules from PATH and pass it explicitly to
+# require.resolve. This avoids committing package.json/node_modules to the
+# repo and avoids npm install -g.
+render_templates_nunjucks() {
+    local src="$1" dst="$2"
+    [ -d "$src" ] || return 0
+    src="$src" dst="$dst" npx --yes -p nunjucks@^3 node -e "$(cat <<'JS'
+        const path = require('path');
+        const fs = require('fs');
+        const npxBin = process.env.PATH.split(path.delimiter).find(p => /[\/\\]_npx[\/\\].+[\/\\]node_modules[\/\\]\.bin$/.test(p));
+        const nunjucks = require(require.resolve('nunjucks', { paths: [npxBin.replace(/[\/\\]\.bin$/, '')] }));
+        const { src, dst } = process.env;
+        const env = nunjucks.configure(src, { autoescape: false, throwOnUndefined: true });
+        (function walk(rel) {
+            for (const e of fs.readdirSync(path.join(src, rel), { withFileTypes: true })) {
+                const r = path.join(rel, e.name);
+                if (e.isDirectory()) walk(r);
+                else if (e.name.endsWith('.j2')) {
+                    const out = path.join(dst, r.replace(/\.j2$/, ''));
+                    fs.mkdirSync(path.dirname(out), { recursive: true });
+                    fs.writeFileSync(out, env.render(r, process.env));
+                }
+            }
+        })('');
+JS
+)"
+}
