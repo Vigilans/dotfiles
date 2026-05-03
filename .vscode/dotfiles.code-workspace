@@ -1,0 +1,17 @@
+{
+    "folders": [
+        {
+            "name": "dotfiles",
+            "path": ".."
+        },
+        {
+            "name": "shell",
+            "path": "../profiles/shell/dotfiles/.config/shell"
+        },
+    ],
+    "settings": {
+        "files.associations": {
+            "*.env": "dotenv",
+        }
+    }
+}
