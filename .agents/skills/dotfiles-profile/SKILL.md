@@ -144,6 +144,7 @@ If the cloned external repo isn't already a framework profile (no `name=` and `s
 
 ## Reference
 
+- [profiles/README.md](../../../profiles/README.md) — full reference
 - [profiles/tmux/profile.sh](../../../profiles/tmux/profile.sh) — clean single-app example with TPM plugin management
 - [profiles/yabai/profile.sh](../../../profiles/yabai/profile.sh) — composite profile with services, fonts, and `package` step
 - [scripts/templates/profile.sh](../../../scripts/templates/profile.sh) — the template used by `dotfiles create`

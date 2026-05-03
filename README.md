@@ -64,9 +64,7 @@ profiles/<name>/
 
 Each phase is invokable directly: `./profiles/<name>/profile.sh prepare`.
 
-Stow folds at the directory level, so edits under `profiles/<name>/dotfiles/`
-are reflected in `$HOME` immediately. Re-stow only when you add a new
-top-level path.
+See [profiles/README.md](profiles/README.md) for the full reference.
 
 ## Adding a profile
 
