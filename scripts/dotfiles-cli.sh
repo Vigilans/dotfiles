@@ -40,9 +40,14 @@ cmd_remove() {
 }
 
 cmd_install() {
-    [ -z "${1:-}" ] && { echo "Usage: dotfiles install <profile>..." >&2; exit 2; }
+    [ -z "${1:-}" ] && { echo "Usage: dotfiles install <profile>... | *" >&2; exit 2; }
     local sorted
-    sorted=$(dotfiles_resolve_profiles "$@") || exit 1
+    if [ $# -eq 1 ] && [ "$1" = "*" ]; then
+        # "*" means all profiles compatible with the current OS
+        sorted=$(dotfiles_resolve_profiles) || exit 1
+    else
+        sorted=$(dotfiles_resolve_profiles "$@") || exit 1
+    fi
     [ -z "$sorted" ] && exit 0
 
     local profile status

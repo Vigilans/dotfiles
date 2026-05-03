@@ -34,8 +34,13 @@ if [ -n "${DOTFILES_PROFILES:-}" ]; then
     echo "OS: $(dotfiles_current_os)"
     echo ""
 
-    IFS=',' read -ra _profiles <<< "$DOTFILES_PROFILES"
-    sorted=$(dotfiles_resolve_profiles "${_profiles[@]}")
+    if [ "$DOTFILES_PROFILES" = "*" ]; then
+        # "*" means all profiles compatible with the current OS
+        sorted=$(dotfiles_resolve_profiles)
+    else
+        IFS=',' read -ra _profiles <<< "$DOTFILES_PROFILES"
+        sorted=$(dotfiles_resolve_profiles "${_profiles[@]}")
+    fi
     if [ -n "$sorted" ]; then
         echo "Install order: $sorted"
         echo ""
