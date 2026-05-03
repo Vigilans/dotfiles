@@ -1,0 +1,60 @@
+{
+  "version": 3,
+  "skills": {
+    "skill-creator": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/anthropics/skills.git",
+      "skillPath": "skills/skill-creator/SKILL.md",
+      "skillFolderHash": "3cf9a8db32597ba3e24b584a3d696f4e11c7d7b6",
+      "pluginName": "example-skills",
+      "installedAt": "2026-04-15T07:46:54.243Z",
+      "updatedAt": "2026-04-29T08:49:00.673Z"
+    },
+    "tavily-extract": {
+      "source": "tavily-ai/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/tavily-ai/skills.git",
+      "skillPath": "skills/tavily-extract/SKILL.md",
+      "skillFolderHash": "5de24876e7faa5789ba64c4c07ed32e4bcfe2f4b",
+      "installedAt": "2026-04-25T13:09:02.653Z",
+      "updatedAt": "2026-04-25T13:09:02.653Z"
+    },
+    "tavily-search": {
+      "source": "tavily-ai/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/tavily-ai/skills.git",
+      "skillPath": "skills/tavily-search/SKILL.md",
+      "skillFolderHash": "74e6f8996fa49a3ebe8aa8f3dbddc4a2c2b5e5e4",
+      "installedAt": "2026-04-25T13:09:02.713Z",
+      "updatedAt": "2026-04-29T08:45:19.701Z"
+    },
+    "tavily-map": {
+      "source": "tavily-ai/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/tavily-ai/skills.git",
+      "skillPath": "skills/tavily-map/SKILL.md",
+      "skillFolderHash": "ab5d8fa7f3db58ebee1907357b66159a54bcd1a2",
+      "installedAt": "2026-05-03T12:44:01.377Z",
+      "updatedAt": "2026-05-03T12:44:01.377Z"
+    }
+  },
+  "dismissed": {
+    "findSkillsPrompt": true
+  },
+  "lastSelectedAgents": [
+    "amp",
+    "antigravity",
+    "cline",
+    "codex",
+    "cursor",
+    "deepagents",
+    "dexto",
+    "firebender",
+    "gemini-cli",
+    "github-copilot",
+    "kimi-cli",
+    "opencode",
+    "warp"
+  ]
+}

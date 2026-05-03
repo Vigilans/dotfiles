@@ -1,0 +1,122 @@
+{
+  "env": {
+    {%- if ANTHROPIC_AUTH_TOKEN %}
+    "ANTHROPIC_AUTH_TOKEN": "{{ ANTHROPIC_AUTH_TOKEN }}",
+    {%- endif %}
+    {%- if ANTHROPIC_BASE_URL %}
+    "ANTHROPIC_BASE_URL": "{{ ANTHROPIC_BASE_URL }}",
+    {%- endif %}
+    {%- if ANTHROPIC_MODEL %}
+    "ANTHROPIC_MODEL": "{{ ANTHROPIC_MODEL }}",
+    {%- endif %}
+    {%- if ANTHROPIC_DEFAULT_OPUS_MODEL %}
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "{{ ANTHROPIC_DEFAULT_OPUS_MODEL }}",
+    {%- endif %}
+    {%- if ANTHROPIC_DEFAULT_SONNET_MODEL %}
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "{{ ANTHROPIC_DEFAULT_SONNET_MODEL }}",
+    {%- endif %}
+    {%- if ANTHROPIC_DEFAULT_HAIKU_MODEL %}
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "{{ ANTHROPIC_DEFAULT_HAIKU_MODEL }}",
+    {%- endif %}
+    {%- if ANTHROPIC_SMALL_FAST_MODEL %}
+    "ANTHROPIC_SMALL_FAST_MODEL": "{{ ANTHROPIC_SMALL_FAST_MODEL }}",
+    {%- endif %}
+    "CLAUDE_CODE_USE_POWERSHELL_TOOL": "1",
+    "DISABLE_TELEMETRY": "1"
+  },
+  "includeCoAuthoredBy": false,
+  {%- if ANTHROPIC_MODEL %}
+  "model": "{{ ANTHROPIC_MODEL }}",
+  {%- endif %}
+  "effortLevel": "xhigh",
+  "cleanupPeriodDays": 90,
+  "showThinkingSummaries": true,
+  "skipDangerousModePermissionPrompt": true,
+  "skipAutoPermissionPrompt": true,
+  "enabledPlugins": {
+    "safety-net@cc-marketplace": true
+  },
+  "extraKnownMarketplaces": {
+    "cc-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "kenryu42/cc-marketplace"
+      }
+    }
+  },
+  "permissions": {
+    "defaultMode": "auto",
+    "allow": [
+      "WebSearch",
+      "WebFetch",
+
+      "Bash(gh search:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh issue view:*)",
+      "Bash(gh issue list:*)",
+      "Bash(npm run:*)",
+      "Bash(playwright-cli click:*)",
+
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git blame:*)",
+      "Bash(git ls-files:*)",
+      "Bash(git submodule status:*)",
+      "Bash(git remote -v:*)",
+
+      "Bash(cat:*)",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(rg:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(wc:*)",
+      "Bash(nl:*)",
+      "Bash(jq:*)",
+      "Bash(realpath:*)",
+      "Bash(diff:*)",
+      "Bash(file:*)",
+      "Bash(stat:*)",
+      "Bash(tree:*)",
+      "Bash(which:*)"
+    ],
+    "deny": [
+      "Bash(git push:main)",
+      "Bash(git push:master)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git add -A:*)",
+      "Bash(git add:.:*)"
+    ],
+    "ask": [
+      "Bash(git push:*)",
+
+      "Bash(gh pr create:*)",
+      "Bash(gh pr edit:*)",
+      "Bash(gh pr comment:*)",
+      "Bash(gh pr merge:*)",
+      "Bash(gh pr close:*)",
+      "Bash(gh pr review:*)",
+
+      "Bash(gh issue create:*)",
+      "Bash(gh issue comment:*)",
+      "Bash(gh issue edit:*)",
+      "Bash(gh issue close:*)",
+
+      "Bash(gh repo create:*)",
+      "Bash(gh repo edit:*)",
+      "Bash(gh repo delete:*)",
+
+      "Bash(gh release create:*)",
+      "Bash(gh release upload:*)",
+      "Bash(gh release edit:*)",
+      "Bash(gh release delete:*)",
+
+      "Bash(gh api:*)"
+    ]
+  }
+}
