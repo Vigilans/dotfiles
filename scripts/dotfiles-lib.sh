@@ -294,15 +294,9 @@ dotfiles_run_phase() {
 
     [ -f "$profile_dir/profile.sh" ] || { echo "Profile '$profile_name' not found" >&2; return 1; }
 
-    (
-        source "$profile_dir/profile.sh"
-        if declare -f "$phase" >/dev/null; then
-            "$phase"
-        else
-            echo "Profile '$profile_name' has no '$phase' function" >&2
-            return 1
-        fi
-    )
+    # Subprocess: profile.sh sets up its own env from rc.sh, dispatches via its
+    # trailing `if [ "$0" = "$BASH_SOURCE" ]; then "$@"; fi` block.
+    bash "$profile_dir/profile.sh" "$phase"
 }
 
 dotfiles_uninstall() {

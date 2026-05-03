@@ -30,6 +30,7 @@ This moves the file into the profile's `dotfiles/` tree and replaces it with a s
 ```
 profiles/{name}/
 ├── profile.sh              # Lifecycle script (executable)
+├── .env                    # Optional: env vars exported during install
 ├── dotfiles/               # Mirrors $HOME — stowed into ~ on install
 │   └── .config/{app}/...
 ├── build/                  # Downloaded artifacts (gitignored)

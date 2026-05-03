@@ -2,15 +2,25 @@ if [ -z "${DOTFILES_ROOT:-}" ]; then
     export DOTFILES_ROOT=$(cd "$(dirname -- "${BASH_SOURCE:-$0}")/.." >/dev/null 2>&1 && pwd)
 fi
 
-# Ensure rc loaded and only loaded once
+# Guard prevents re-sourcing within the same shell. The guard is intentionally
+# NOT exported, so each subprocess (every profile phase invocation) gets a
+# fresh load — including a fresh read of all .env files from disk, which is
+# how profile-contributed env propagates across phases.
 if [ -z "${DOTFILES_RC_LOADED:-}" ]; then
-    # Load environment variables
+    # Load bootstrap .env (user's main config, gitignored)
     set -a
     [ -f "$DOTFILES_ROOT/.env" ] && source "$DOTFILES_ROOT/.env"
     set +a
 
-    # Load helper library functions
+    # Load each profile's .env (profile-contributed env vars / PATH for downstream)
+    set -a
+    for f in "$DOTFILES_ROOT"/profiles/*/.env "$DOTFILES_ROOT"/profiles/local/*/.env; do
+        [ -f "$f" ] && source "$f"
+    done
+    set +a
+
+    # Load helper library
     source "$DOTFILES_ROOT/scripts/dotfiles-lib.sh"
 
-    export DOTFILES_RC_LOADED=1
+    DOTFILES_RC_LOADED=1
 fi

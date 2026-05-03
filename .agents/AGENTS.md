@@ -76,6 +76,8 @@ Reference: [profiles/tmux/profile.sh](profiles/tmux/profile.sh).
 - `DOTFILES_EXTRA_PROFILES` — `name=url` pairs (whitespace-tolerant); bootstrap clones each into `profiles/<name>/` and appends names to `DOTFILES_PROFILES`. Used to manage secrets in a separate private repo without coupling to the public framework.
 - Profile-specific vars: prefix with profile name (e.g. `YABAI_*`)
 
+Each profile may drop a `.env` at `profiles/<name>/.env`; the framework re-reads all profile `.env` files at every phase invocation, so one profile can publish env vars for downstream profiles.
+
 Runtime exports (set by the framework, not `.env`):
 - `DOTFILES_ROOT` — absolute path to repo root
 - `DOTFILES_RC_LOADED` — single-load guard
