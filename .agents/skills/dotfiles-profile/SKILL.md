@@ -1,6 +1,6 @@
 ---
 name: dotfiles-profile
-description: Use this skill when creating a new profile under `profiles/`, modifying an existing profile's `profile.sh` lifecycle, adjusting profile metadata (name/description/supported_os/depends), laying out files under `dotfiles/` for stow, or deciding how a config path should be structured so stow links it cleanly. Also triggers when debugging stow conflicts, understanding directory folding behavior, or deciding whether something should be a standalone profile versus part of an existing one. Prefer `dotfiles create <name>` over manually scaffolding.
+description: Use this skill when creating a new profile under `profiles/`, modifying an existing profile's `profile.sh` lifecycle, adjusting profile metadata (name/description/supported_os/depends/after/before), laying out files under `dotfiles/` for stow, or deciding how a config path should be structured so stow links it cleanly. Also triggers when debugging stow conflicts, understanding directory folding behavior, or deciding whether something should be a standalone profile versus part of an existing one. Prefer `dotfiles create <name>` over manually scaffolding.
 ---
 
 # Dotfiles profile authoring
@@ -43,7 +43,9 @@ profiles/{name}/
 name=myapp
 description="What this profile installs"
 supported_os=(macos)    # auto-filled by `dotfiles create`
-depends=()              # other profile names this requires
+depends=()              # required profiles, auto-pulled into profiles to install if missing
+after=()                # order current profile after these during install
+before=()               # order current profile before these during install
 
 # Install upstream packages/binaries
 prepare() { ... }

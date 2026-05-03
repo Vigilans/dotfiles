@@ -51,8 +51,8 @@ profiles/<name>/
 └── build/              # local build artifacts (gitignored)
 ```
 
-`profile.sh` declares `name`, `description`, `supported_os`, `depends`, and
-defines lifecycle phases:
+`profile.sh` declares `name`, `description`, `supported_os`, `depends`,
+`after`, `before`, and defines lifecycle phases:
 
 | Phase       | Purpose                                                  |
 |-------------|----------------------------------------------------------|

@@ -57,7 +57,7 @@ dotfiles completion <bash|zsh>          # Output completion script
 
 Each profile declares metadata and defines lifecycle functions:
 
-- `name`, `description`, `supported_os=(...)`, `depends=(...)`
+- `name`, `description`, `supported_os=(...)`, `depends=(...)`, `after=(...)`, `before=(...)`
 - `prepare()` — install upstream packages (brew, apt, pacman, github-release)
 - `package()` — assemble files in `dotfiles/` from `build/` artifacts before stowing
 - `install()` — `stow -v -d "$PROFILE_ROOT" -t "$HOME" dotfiles`, then start services

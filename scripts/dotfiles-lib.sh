@@ -33,11 +33,15 @@ dotfiles_load_profile() {
         set +u
         source "$profile_dir/profile.sh" 2>/dev/null
         [ -z "$name" ] && return 1
-        printf '%s\t%s\t%s\t%s' \
+        # Use ASCII Unit Separator (\x1f) — non-whitespace, won't collapse on
+        # empty interior fields the way \t would (bash IFS-whitespace rule).
+        printf '%s\x1f%s\x1f%s\x1f%s\x1f%s\x1f%s' \
             "$name" \
             "${description%%$'\n'*}" \
             "$(printf '%s\n' "${supported_os[@]}" | sort | paste -sd ' ' -)" \
-            "${depends[*]}"
+            "${depends[*]}" \
+            "${after[*]}" \
+            "${before[*]}"
     )
 }
 
@@ -103,7 +107,7 @@ dotfiles_status_detail() {
 
     local p_name p_desc p_os p_deps
     if [ -n "$metadata" ]; then
-        IFS=$'\t' read -r p_name p_desc p_os p_deps <<< "$metadata"
+        IFS=$'\x1f' read -r p_name p_desc p_os p_deps _ _ <<< "$metadata"
     else
         p_name="$profile_name"; p_desc="(no metadata)"; p_os=""; p_deps=""
     fi
@@ -173,24 +177,63 @@ dotfiles_resolve_profiles() {
     current_os=$(dotfiles_current_os)
 
     local -A meta_cache=()
-    local filtered=()
-    local profile
-    for profile in "${profiles[@]}"; do
-        local metadata
-        metadata=$(dotfiles_load_profile "$profile") || continue
-        meta_cache[$profile]="$metadata"
+    local -A in_set=()
+    local install_set=()
 
-        IFS=$'\t' read -r _name _desc p_os _deps <<< "$metadata"
+    # Load metadata, filter by OS, and auto-pull depends transitively into install_set.
+    _resolve_profiles() {
+        local p="$1"
+        [ "${in_set[$p]:-}" = "1" ] && return 0
+
+        local m="${meta_cache[$p]:-}"
+        if [ -z "$m" ]; then
+            m=$(dotfiles_load_profile "$p") || { echo "Unknown profile: $p" >&2; return 1; }
+            meta_cache[$p]="$m"
+        fi
+
+        local _n _d p_os deps _a _b
+        IFS=$'\x1f' read -r _n _d p_os deps _a _b <<< "$m"
         if [ -n "$p_os" ]; then
             case " $p_os " in
                 *" $current_os "*) ;;
-                *) continue ;;
+                *) return 0 ;;
             esac
         fi
-        filtered+=("$profile")
+
+        in_set[$p]=1
+        install_set+=("$p")
+
+        local dep
+        for dep in $deps; do
+            _resolve_profiles "$dep" || return 1
+        done
+    }
+
+    local profile
+    for profile in "${profiles[@]}"; do
+        _resolve_profiles "$profile" || return 1
     done
 
-    # Topological sort with dependency auto-inclusion
+    # Collect predecessor edges within install_set:
+    #   depends + after on P:  X precedes P  (if X in_set)
+    #   before on P:           P precedes X  (if X in_set)
+    local -A predecessors=()
+    for profile in "${install_set[@]}"; do
+        local _n _d _o deps after before
+        IFS=$'\x1f' read -r _n _d _o deps after before <<< "${meta_cache[$profile]}"
+
+        local x
+        for x in $deps $after; do
+            [ "${in_set[$x]:-}" = "1" ] || continue
+            predecessors[$profile]="${predecessors[$profile]:-} $x"
+        done
+        for x in $before; do
+            [ "${in_set[$x]:-}" = "1" ] || continue
+            predecessors[$x]="${predecessors[$x]:-} $profile"
+        done
+    done
+
+    # Topological sort over install_set using collected predecessor edges.
     local -A visited=()
     local -A in_stack=()
     local order=()
@@ -204,17 +247,9 @@ dotfiles_resolve_profiles() {
         fi
         in_stack[$p]=1
 
-        local m="${meta_cache[$p]:-}"
-        if [ -z "$m" ]; then
-            m=$(dotfiles_load_profile "$p") || { echo "Unknown profile: $p" >&2; return 1; }
-            meta_cache[$p]="$m"
-        fi
-
-        local _n _d _o deps
-        IFS=$'\t' read -r _n _d _o deps <<< "$m"
-        local dep
-        for dep in $deps; do
-            _topo_visit "$dep"
+        local prev
+        for prev in ${predecessors[$p]:-}; do
+            _topo_visit "$prev" || return 1
         done
 
         in_stack[$p]=0
@@ -222,8 +257,8 @@ dotfiles_resolve_profiles() {
         order+=("$p")
     }
 
-    for profile in "${filtered[@]}"; do
-        _topo_visit "$profile"
+    for profile in "${install_set[@]}"; do
+        _topo_visit "$profile" || return 1
     done
 
     echo "${order[@]}"

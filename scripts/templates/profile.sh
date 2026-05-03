@@ -10,7 +10,9 @@ source "$DOTFILES_ROOT/scripts/dotfiles-rc.sh"
 name=__NAME__
 description="__DESCRIPTION__"
 supported_os=(__OS__)  # e.g. (macos linux windows)
-depends=()
+depends=()             # required profiles, auto-pulled into profiles to install if missing
+after=()               # order current profile after these during install
+before=()              # order current profile before these during install
 
 # Install upstream packages/binaries (brew, apt, github-release, etc.)
 prepare() {

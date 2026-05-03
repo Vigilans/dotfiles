@@ -16,7 +16,7 @@ cmd_list() {
         local status
         status=$(dotfiles_profile_status "$profile")
 
-        IFS=$'\t' read -r p_name p_desc p_os p_deps <<< "$metadata"
+        IFS=$'\x1f' read -r p_name p_desc p_os p_deps _ _ <<< "$metadata"
         printf '%-15s %-15s %-20s %s\n' "$p_name" "$status" "$p_os" "$p_desc"
     done
 }
@@ -41,8 +41,18 @@ cmd_remove() {
 
 cmd_install() {
     [ -z "${1:-}" ] && { echo "Usage: dotfiles install <profile>..." >&2; exit 2; }
-    for profile in "$@"; do
-        dotfiles_install "$profile"
+    local sorted
+    sorted=$(dotfiles_resolve_profiles "$@") || exit 1
+    [ -z "$sorted" ] && exit 0
+
+    local profile status
+    for profile in $sorted; do
+        status=$(dotfiles_profile_status "$profile")
+        if [ "$status" = "installed" ]; then
+            echo "[$profile] already installed, skipping"
+        else
+            dotfiles_install "$profile"
+        fi
     done
 }
 
