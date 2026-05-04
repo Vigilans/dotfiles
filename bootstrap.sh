@@ -26,7 +26,11 @@ if [ -n "${DOTFILES_EXTRA_PROFILES:-}" ]; then
             fi
         fi
     done
-    DOTFILES_PROFILES="${DOTFILES_PROFILES:+$DOTFILES_PROFILES,}$(IFS=,; echo "${_extra_names[*]}")"
+    # When DOTFILES_PROFILES="*", leave it alone — cloned externals will be
+    # picked up by dotfiles_discover_profiles.
+    if [ "${DOTFILES_PROFILES:-}" != "*" ]; then
+        DOTFILES_PROFILES="${DOTFILES_PROFILES:+$DOTFILES_PROFILES,}$(IFS=,; echo "${_extra_names[*]}")"
+    fi
 fi
 
 # Install profiles
