@@ -55,7 +55,9 @@ dotfiles_profile_status() {
     local _found=0 _missing=0
     _dotfiles_check_tree "$dotfiles_dir" "$HOME" "$dotfiles_dir"
 
-    if [ "$_missing" -eq 0 ] && [ "$_found" -gt 0 ]; then
+    if [ "$_found" -eq 0 ] && [ "$_missing" -eq 0 ]; then
+        echo "empty"
+    elif [ "$_missing" -eq 0 ] && [ "$_found" -gt 0 ]; then
         echo "installed"
     elif [ "$_found" -eq 0 ]; then
         echo "not installed"
@@ -341,7 +343,7 @@ dotfiles_uninstall() {
     local status
     status=$(dotfiles_profile_status "$profile_name")
 
-    if [ "$status" = "not installed" ] || [ "$status" = "no dotfiles" ]; then
+    if [ "$status" = "not installed" ] || [ "$status" = "no dotfiles" ] || [ "$status" = "empty" ]; then
         echo "Profile '$profile_name' is not installed" >&2
         return 1
     fi
