@@ -302,6 +302,8 @@ dotfiles_import() {
     local profile_dir
     profile_dir=$(dotfiles_profile_dir "$profile_name") || { echo "Profile '$profile_name' does not exist. Run 'dotfiles create $profile_name' first." >&2; return 1; }
 
+    _dotfiles_ensure_stow || return 1
+
     local path
     for path in "$@"; do
         local expanded="${path/#\~/$HOME}"
@@ -344,7 +346,24 @@ dotfiles_uninstall() {
         return 1
     fi
 
+    _dotfiles_ensure_stow || return 1
+
     dotfiles_run_phase "$profile_name" uninstall
+}
+
+_dotfiles_ensure_stow() {
+    command -v stow &>/dev/null && return 0
+    echo "Installing GNU Stow..."
+    if command -v brew &>/dev/null; then
+        brew install stow
+    elif command -v apt &>/dev/null; then
+        sudo apt install -y stow
+    elif command -v pacman &>/dev/null; then
+        sudo pacman -S --noconfirm stow
+    else
+        echo "ERROR: cannot install stow — no supported package manager found" >&2
+        return 1
+    fi
 }
 
 _dotfiles_stow_conflicts() {
@@ -443,6 +462,8 @@ dotfiles_install() {
         echo "Profile '$profile_name' is already installed" >&2
         return 1
     fi
+
+    _dotfiles_ensure_stow || return 1
 
     echo "[$profile_name] prepare"
     dotfiles_run_phase "$profile_name" prepare
