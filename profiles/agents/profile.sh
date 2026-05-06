@@ -52,14 +52,14 @@ install() {
     _install_skills_link "$HOME/.agents/skills" "$HOME/.claude/skills" "$HOME/.config/opencode/skills"
     stow -v -d "$PROFILE_ROOT" -t "$HOME" dotfiles
     _install_vendor_skills
-    _install_claude_plugins
+    _sync_claude_plugins install
 }
 
 # Re-prepare and update runtime components
 upgrade() {
     prepare
     npx -y skills update -g -y
-    _install_claude_plugins
+    _sync_claude_plugins upgrade
 }
 
 # Unstow dotfiles from $HOME and clean up
@@ -112,27 +112,54 @@ _install_vendor_skills() {
     done < <(jq -r '.skills | to_entries[] | "\(.key)\t\(.value.source)"' "$lock")
 }
 
-# Install Claude Code plugins enumerated in ~/.claude/settings.json's
-# enabledPlugins block. Settings.json is the declarative source of truth;
-# Claude Code's installed_plugins.json is just a state log we don't track.
-# Idempotent: already-installed plugins are skipped.
-_install_claude_plugins() {
+# Sync plugins and their marketplaces against ~/.claude/settings.json.
+# Settings.json is the declarative source of truth; installed_plugins.json and
+# known_marketplaces.json are Claude Code's state logs we read but don't track.
+#   mode=install: install missing plugins, skip already-installed.
+#   mode=upgrade: install missing, `plugin update` already-installed.
+# Marketplace sync runs first either way: unregistered → add (clones source);
+# already-registered → update (pulls catalog). One network call per marketplace.
+_sync_claude_plugins() {
+    local mode="${1:-install}"
     local settings="$HOME/.claude/settings.json"
     [ -f "$settings" ] || return 0
     command -v claude &>/dev/null || {
-        echo "[agents] claude CLI not on PATH, skipping plugin install" >&2
+        echo "[agents] claude CLI not on PATH, skipping plugin sync" >&2
         return 0
     }
+
+    local known="$HOME/.claude/plugins/known_marketplaces.json"
+    local name src_type src_repo
+    while IFS=$'\t' read -r name src_type src_repo; do
+        [ -z "$name" ] && continue
+        if [ -f "$known" ] && jq -e --arg n "$name" 'has($n)' "$known" >/dev/null; then
+            echo "[agents] updating marketplace $name"
+            claude plugin marketplace update "$name" || echo "[agents] failed to update marketplace $name" >&2
+            continue
+        fi
+        case "$src_type" in
+            github)
+                echo "[agents] adding marketplace $name ($src_repo)"
+                claude plugin marketplace add "$src_repo" || echo "[agents] failed to add marketplace $name" >&2
+                ;;
+            *)
+                echo "[agents] marketplace $name has unsupported source type '$src_type', skipping" >&2
+                ;;
+        esac
+    done < <(jq -r '.extraKnownMarketplaces // {} | to_entries[] | "\(.key)\t\(.value.source.source)\t\(.value.source.repo // "")"' "$settings")
 
     local registry="$HOME/.claude/plugins/installed_plugins.json"
     local plugin
     while IFS= read -r plugin; do
         [ -z "$plugin" ] && continue
         if [ -f "$registry" ] && jq -e --arg p "$plugin" '.plugins[$p] // empty | length > 0' "$registry" >/dev/null; then
-            continue
+            [ "$mode" = "upgrade" ] || continue
+            echo "[agents] updating plugin $plugin"
+            claude plugin update "$plugin" || echo "[agents] failed to update $plugin" >&2
+        else
+            echo "[agents] installing plugin $plugin"
+            claude plugin install "$plugin" || echo "[agents] failed to install $plugin" >&2
         fi
-        echo "[agents] installing plugin $plugin"
-        claude plugin install "$plugin" || echo "[agents] failed to install $plugin" >&2
     done < <(jq -r '.enabledPlugins // {} | to_entries[] | select(.value == true) | .key' "$settings")
 }
 
