@@ -372,7 +372,7 @@ _dotfiles_stow_conflicts() {
     local profile_dir="$1"
     stow -n -v -d "$profile_dir" -t "$HOME" dotfiles 2>&1 \
         | grep 'existing target' \
-        | sed 's/.*existing target [^:]*: //' \
+        | sed -E 's/.*existing target ([^:]*: )?//' \
         | sed 's/ since .*//'
 }
 
