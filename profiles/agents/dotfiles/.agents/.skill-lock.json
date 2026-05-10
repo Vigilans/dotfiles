@@ -9,7 +9,7 @@
       "skillFolderHash": "3cf9a8db32597ba3e24b584a3d696f4e11c7d7b6",
       "pluginName": "example-skills",
       "installedAt": "2026-04-15T07:46:54.243Z",
-      "updatedAt": "2026-04-29T08:49:00.673Z"
+      "updatedAt": "2026-05-10T14:47:40.273Z"
     },
     "tavily-extract": {
       "source": "tavily-ai/skills",
@@ -18,7 +18,7 @@
       "skillPath": "skills/tavily-extract/SKILL.md",
       "skillFolderHash": "5de24876e7faa5789ba64c4c07ed32e4bcfe2f4b",
       "installedAt": "2026-04-25T13:09:02.653Z",
-      "updatedAt": "2026-04-25T13:09:02.653Z"
+      "updatedAt": "2026-05-10T15:36:08.235Z"
     },
     "tavily-search": {
       "source": "tavily-ai/skills",
