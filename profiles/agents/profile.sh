@@ -58,6 +58,9 @@ install() {
 # Re-prepare and update runtime components
 upgrade() {
     prepare
+    package
+    stow -v -d "$PROFILE_ROOT" -t "$HOME" dotfiles
+    _install_vendor_skills
     npx -y skills update -g -y
     _sync_claude_plugins upgrade
 }

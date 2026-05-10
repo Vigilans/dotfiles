@@ -75,7 +75,7 @@ The trailing `if [ "$0" = "$BASH_SOURCE" ]; then "$@"; fi` makes phases invokabl
 |---|---|---|
 | `prepare` | Install system dependencies (brew, apt, pacman) | Yes (package managers handle this) |
 | `package` | Populate `dotfiles/`: build artifacts, clone plugins, render `.j2` templates via `render_templates_<engine>` | Yes (skip if exists) |
-| `install` | CLI resolves stow conflicts first (d/b/k/m prompt), then profile's `stow` + start services | Re-run safe, stow is idempotent || `upgrade` | Re-prepare + update plugins + reload configs | Yes |
+| `install` | CLI resolves stow conflicts first (d/b/k/m prompt), then profile's `stow` + start services | Re-run safe, stow is idempotent || `upgrade` | Rebuild and redeploy dotfiles, update runtime components | Yes |
 | `uninstall` | Stop services + `stow -D` to unlink | Yes |
 
 ## Stow conventions

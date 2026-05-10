@@ -32,6 +32,8 @@ install() {
 # Re-prepare and update runtime components
 upgrade() {
     prepare
+    package
+    stow -v -d "$PROFILE_ROOT" -t "$HOME" dotfiles
 }
 
 # Unstow dotfiles from $HOME and clean up

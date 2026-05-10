@@ -61,7 +61,7 @@ Each profile declares metadata and defines lifecycle functions:
 - `prepare()` — install upstream packages (brew, apt, pacman, github-release)
 - `package()` — assemble files in `dotfiles/`: download into `build/`, clone plugins, or render templates via `render_templates_<engine>` helpers
 - `install()` — `stow -v -d "$PROFILE_ROOT" -t "$HOME" dotfiles`, then start services
-- `upgrade()` — re-run `prepare`, update plugins, reload configs
+- `upgrade()` — rebuild and redeploy dotfiles, update runtime components
 - `uninstall()` — stop services, then `stow -v -D -d "$PROFILE_ROOT" -t "$HOME" dotfiles`
 
 The trailing `if [ "$0" = "$BASH_SOURCE" ]; then "$@"; fi` makes phases invokable directly: `./profile.sh prepare`.
