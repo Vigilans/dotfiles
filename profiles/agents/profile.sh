@@ -36,6 +36,9 @@ prepare() {
             return 1
         fi
     fi
+    if ! command -v claude &>/dev/null; then
+        npm install -g @anthropic-ai/claude-code
+    fi
 }
 
 # Assemble files in dotfiles/ before stowing (clone plugins, build artifacts, etc.)
