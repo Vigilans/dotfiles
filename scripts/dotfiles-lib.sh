@@ -519,6 +519,8 @@ render_templates_nunjucks() {
                 if (e.isDirectory()) walk(r);
                 else if (e.name.endsWith('.j2')) {
                     const out = path.join(dst, r.replace(/\.j2$/, ''));
+                    const profile = path.dirname(src);
+                    console.log('RENDER: ' + path.join(path.relative(profile, src), r) + ' => ' + path.relative(profile, out));
                     fs.mkdirSync(path.dirname(out), { recursive: true });
                     fs.writeFileSync(out, env.render(r, process.env));
                 }
