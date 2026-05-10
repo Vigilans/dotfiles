@@ -41,7 +41,7 @@ log "fired event=$event session=$session cwd=$cwd host=$host"
 log "input=$input"
 
 # ---------- Pick mode and filter events ----------
-if [ -n "${VSCODE_OSC_NOTIFIER_SOCK:-}" ] && { [ "$OS" = "Windows_NT" ] || [ -S "$VSCODE_OSC_NOTIFIER_SOCK" ]; }; then
+if [ -n "${VSCODE_OSC_NOTIFIER_SOCK:-}" ] && { [ "${OS:-}" = "Windows_NT" ] || [ -S "$VSCODE_OSC_NOTIFIER_SOCK" ]; }; then
     mode=vscode
 else
     mode=cli
