@@ -128,7 +128,7 @@ dispatch_via_vscode() {
     local title="$1" body="$2"
     local payload=$(build_payload "$body")
     log "branch=vscode sock=$VSCODE_OSC_NOTIFIER_SOCK payload=$payload"
-    if printf '\e]777;notify;%s;%s\a' "$title" "$payload" | nc -U "$VSCODE_OSC_NOTIFIER_SOCK" 2>/dev/null; then
+    if printf '\e]777;notify;%s;%s\a' "$title" "$payload" | connect_to_sock "$VSCODE_OSC_NOTIFIER_SOCK" 2>>"$LOG"; then
         log "sock done"
     else
         log "sock write failed"
@@ -148,6 +148,47 @@ dispatch_via_osc() {
     printf '%s' "$osc" > /dev/tty 2>/dev/null \
         || log "osc tty write failed"
     log "osc done"
+}
+
+# Connect stdin to a Unix socket (macOS/Linux) or Win32 named pipe (Windows).
+# Tries node first since net.connect() handles both endpoint types uniformly;
+# falls back to perl on Unix or powershell.exe (5.1) on Windows — both are
+# pre-installed on their respective platforms.
+connect_to_sock() {
+    local sock="$1"
+
+    if command -v node >/dev/null 2>&1; then
+        log "connect via node"
+        MSYS_NO_PATHCONV=1 node -e \
+            'process.stdin.pipe(require("net").createConnection(process.argv[1]))' \
+            "$sock"
+        return $?
+    fi
+
+    case "$(uname -s)" in
+        MINGW*|MSYS*|CYGWIN*)
+            log "connect via powershell"
+            local pipe_name="${sock##*\\}"
+            MSYS_NO_PATHCONV=1 powershell.exe -NoProfile -Command "
+                \$p = New-Object System.IO.Pipes.NamedPipeClientStream('.', '$pipe_name', [System.IO.Pipes.PipeDirection]::Out)
+                \$p.Connect(2000)
+                [Console]::OpenStandardInput().CopyTo(\$p)
+                \$p.Close()
+            "
+            ;;
+        *)
+            if command -v perl >/dev/null 2>&1; then
+                log "connect via perl"
+                perl -e 'use IO::Socket::UNIX;
+                         my $s = IO::Socket::UNIX->new($ARGV[0]) || die;
+                         binmode STDIN; binmode $s;
+                         print $s $_ while sysread(STDIN, $_, 4096)' "$sock"
+            else
+                log "connect: no usable tool"
+                return 1
+            fi
+            ;;
+    esac
 }
 
 # ---------- Main ----------
