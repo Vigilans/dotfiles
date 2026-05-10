@@ -53,6 +53,10 @@ if [ -n "${DOTFILES_EXTRA_PROFILES:-}" ]; then
     fi
 fi
 
+# Pre-create well-known user directories to prevent stow from folding them
+# into symlinks when a profile is the first to stow under these paths.
+mkdir -p ~/.config ~/.local/bin ~/.local/share ~/.cache
+
 # Install profiles
 if [ -n "${DOTFILES_PROFILES:-}" ]; then
     echo "OS: $(dotfiles_current_os)"
@@ -85,7 +89,6 @@ if [ -n "${DOTFILES_PROFILES:-}" ]; then
 fi
 
 # Install CLI
-mkdir -p ~/.local/bin
 ln -snf "$DOTFILES_ROOT/scripts/dotfiles-cli.sh" ~/.local/bin/dotfiles
 
 echo "dotfiles CLI installed to ~/.local/bin/dotfiles"
