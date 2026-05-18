@@ -21,6 +21,11 @@
     {%- if ANTHROPIC_SMALL_FAST_MODEL %}
     "ANTHROPIC_SMALL_FAST_MODEL": "{{ ANTHROPIC_SMALL_FAST_MODEL }}",
     {%- endif %}
+    {%- for key, val in os.environ %}
+    {%-   if key.startsWith("CLAUDE_CODE_SUBAGENT_") and key.endsWith("_MODEL") %}
+    "{{ key }}": "{{ val }}",
+    {%-   endif %}
+    {%- endfor %}
     "CLAUDE_CODE_USE_POWERSHELL_TOOL": "1",
     "CLAUDE_CODE_ATTRIBUTION_HEADER": "0",
     "DISABLE_TELEMETRY": "1"
@@ -46,6 +51,17 @@
     }
   },
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/subagent-model.sh"
+          }
+        ]
+      }
+    ],
     "PermissionRequest": [
       {
         "matcher": "",

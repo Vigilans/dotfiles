@@ -522,7 +522,7 @@ render_templates_nunjucks() {
                     const profile = path.dirname(src);
                     console.log('RENDER: ' + path.join(path.relative(profile, src), r) + ' => ' + path.relative(profile, out));
                     fs.mkdirSync(path.dirname(out), { recursive: true });
-                    fs.writeFileSync(out, env.render(r, process.env));
+                    fs.writeFileSync(out, env.render(r, { ...process.env, os: { environ: process.env } }));
                 }
             }
         })('');
