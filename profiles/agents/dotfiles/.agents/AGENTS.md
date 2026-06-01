@@ -127,14 +127,18 @@ Before claiming completion:
 - If verification fails, diagnose and continue when safe. Do not summarize failure as completion.
 - Final reports should distinguish what changed, what was verified, and what remains open.
 
-## Git/GitHub contribution workflow
+## Git Workflow
 
-### Remotes
+### GitHub contribution workflow
+
+When preparing an upstream PR contribution through the user's fork:
+
+#### Remotes
 
 - `origin` = upstream repo (e.g. <OriginAuthor>/<Repo>)
 - `fork` = user's fork (e.g. Vigilans/<Repo>)
 
-### Development flow
+#### Development flow
 
 1. **dev branch**: All development happens on `dev`. Commit changes here first — this is the development record.
 2. **Create PR branch**: `git fetch origin` first, then `git checkout -b vigilans/<topic> origin/main` — always branch off **latest** upstream main, NOT dev.
@@ -144,21 +148,22 @@ Before claiming completion:
 6. **Draft PR title + description**: Show to user for review.
 7. **User confirms** → create PR via `gh pr create`.
 
-### Rules
+When following this contribution flow:
 
 - Never skip the dev commit.
 - Never push without explicit user confirmation.
 - Never create a PR without explicit user confirmation of title + body. "先把分支开了" means push the branch, NOT create the PR.
+- Match the repository's existing commit-message style. Review nearby full commit messages before committing;
 - No Co-Authored-By: Claude lines unless user explicitly asks.
 - No Claude/AI attribution anywhere — not in commits, PR body, issue body, or comments. Ever.
 
-### Issue / PR comments
+When posting or editing GitHub issue/PR comments:
 
 - Always draft the comment content and show to user first.
 - User confirms → post via `gh api`.
 - When editing a published comment, show the updated content to user first before patching.
 
-### Syncing dev with upstream
+#### Syncing dev with upstream
 
 - Only when the user explicitly requests it: `git fetch origin && git rebase origin/main` on dev to incorporate upstream changes.
 - Already-merged commits will be skipped or produce conflicts. For cleanly merged commits, skip with `git rebase --skip`. For others, carefully assess the situation and determine the appropriate action.
@@ -167,6 +172,7 @@ Before claiming completion:
 
 #### During rebase
 
+- Use `GIT_SEQUENCE_EDITOR` to generate the rebase plan before starting an interactive rebase.
 - When `git rebase` reports conflicts, check **every** conflicting file before `git add`. Never let conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`) get committed — a committed conflict marker corrupts that commit and all subsequent commits in the chain.
 - When syncing dev with upstream, some dev commits may have been superseded by upstream commits with different content or message rather than cherry-picked directly. Carefully determine whether corresponding dev commits should be dropped, edited, split, or otherwise adjusted.
 
