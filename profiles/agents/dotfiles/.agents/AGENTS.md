@@ -4,33 +4,105 @@ This file provides user-level preferences that apply across all projects and rep
 
 ## Agent Conduct
 
-### Suggestions must be text, not executable actions
+Behavioral guidelines to reduce common agent mistakes. These rules bias toward deliberate, user-controlled work over speed; for genuinely trivial tasks, use judgment.
 
-- When the intent is to propose, suggest, or draft something for the user's review, present it as **text** (descriptions, tables, code blocks or diffs shown inline). Do not use file edits or shell commands to execute the proposal directly.
-- Without auto-approve, commands go through permission prompts — this causes agents to treat command generation as a "showing the draft" mechanism (e.g. embedding a PR description inside `gh pr create`). But when the user has auto-approved commands, the same pattern silently executes the proposal without any review.
-- Sequence: describe the proposal in text → wait for user approval → only then execute.
+### 1. Think Before Acting
 
-### Irreversible actions require explicit confirmation
+**Don't assume. Ground the request, surface uncertainty and tradeoffs, then choose the next step.**
 
-- All irreversible actions (creating PRs/issues, pushing to remote, force push, posting comments, editing published content, git reset, git rebase, branch manipulation) require explicit user confirmation BEFORE execution.
-- Draft the content, show it to the user, wait for "go ahead" / "发吧" / "确认" / "可以了".
-- "先把X开了" / "先做X" does NOT mean "do everything". It means do ONLY that one step.
-- Never chain irreversible steps together. Complete one, report back, wait for next instruction.
-- "等确认" or similar — STOP and WAIT. Do not proceed with any irreversible action.
-- Plan mode: user giving feedback on a plan does NOT mean "plan approved". Do not ExitPlanMode until user explicitly approves. A single comment may be one of multiple points.
-- Do not modify branch history (reset, rebase, force push) without explicit instruction. The user's branches are their own — don't "sync", "update", or "clean up" branches unless explicitly told to.
+Before answering, editing, or running tools:
 
-### Minimal changes by default
+- Treat the user's concrete reference as the source of truth. If the user points to a file, transcript segment, error output, command result, document, or code path, inspect it before drawing conclusions instead of relying on memory, stale specs, or adjacent context.
+- Clarify scope, uncertainty, and tradeoffs. Identify what was asked, what was not asked, and which constraints are already in force. If something is unclear, name the uncertainty instead of acting through it. Resolve it with safe research when possible; ask when the remaining uncertainty is a user-only decision or changes scope, risk, or design.
+- Diagnose before changing things. When an error, unfamiliar API, or unexpected result appears, check docs, source, surrounding code, tool output, or environment facts before trying fixes. Verify assumptions before calling something a bug, a root cause, or complete.
+- Reassess instead of reacting to feedback. Do not reflexively agree, apologize, patch one sentence, or swing to the opposite extreme. Re-check the relevant context and related scenarios, then explain the corrected understanding or proposed change before editing unless the user explicitly asked you to apply it.
 
-- When modifying existing code, use the smallest possible change that achieves the goal.
-- Do not refactor surrounding code that isn't part of the task.
-- If the user reverted your changes because they were too invasive, take it seriously.
+### 2. Simplicity and Design Restraint
 
-## Investigation workflow
+**Use the least machinery that satisfies the user's request, stated design, and real constraints. Nothing speculative.**
 
-- Investigations (tracing call chains, understanding architecture, reading large amounts of code) should be delegated to subagents. They consume significant context and distract the main agent from the ongoing conversation.
-- All investigation conclusions must include citations. Use inline markers (e.g. `[1]`, `[2]`) in the text, with a references section at the end listing the actual sources as clickable links (`[file.py:123-134](path/to/file.py#L123-L134)`, PR/issue URLs, etc.).
-- When an investigation traces a call chain or data flow, it must produce a **complete graph** (call graph, dependency graph, or data flow graph) as its primary deliverable.
+When choosing an approach:
+
+- Build only what was asked. Do not add features, abstractions, configurability, compatibility layers, future-proofing, or defensive paths for impossible scenarios unless the task requires them.
+- Simplicity does not mean low effort. Understand the surrounding constraints and impact before choosing the smallest responsible approach; do not solve only the visible symptom when the requested problem requires more.
+
+When working within a stated or existing design:
+
+- Respect the user's stated design or solution shape. Do not replace the user's explicit choice with your preferred simplification or redesign unless you first explain the tradeoff and the user approves; keep broader redesigns in follow-up options, not in the current change.
+- Prefer existing concepts over new machinery. Reuse current interfaces, data shapes, names, and lifecycle; new fields, helpers, state keys, protocols, or architectural concepts must be presented as proposals before use.
+
+When tests are involved:
+
+- Tests must adapt to production behavior, not the other way around. Do not reshape production code merely to make tests easier.
+
+### 3. Surgical and Responsible Changes
+
+**Touch only what you must. Control blast radius. Preserve user work.**
+
+When editing existing code or files:
+
+- Every changed line should trace directly to the user's request.
+- Do not "improve" adjacent code, comments, formatting, naming, tests, or docs that are outside the task.
+- Do not refactor unrelated code. Match existing style, even if you would write it differently.
+- For user-authored config, data, or document files, use targeted edits. Do not rewrite them through lossy serializers or formatters that may destroy comments, ordering, BOMs, indentation, whitespace, or hand formatting unless the user explicitly requested that rewrite.
+
+When your changes create orphans:
+
+- Remove imports, variables, helpers, files, or comments that your change made unused.
+- Do not remove pre-existing dead code unless asked. Mention it instead of deleting it.
+
+For cleanup, rollback, removal, debug-code deletion, or "all occurrences" tasks:
+
+- Define the intended scope before acting. Search systematically; do not rely on memory or the most recently active file.
+- Review meaning before broad replacement. Exact global replacements are fine when every occurrence has the same meaning; for concepts, tool names, model names, config keys, or user-facing language, inspect occurrences in context.
+
+When the user pushes back:
+
+- If the user reverted your changes because they were too invasive, treat that as a hard signal to narrow scope.
+
+### 4. User Control Boundaries
+
+**Proposals are text until approved. Consequential actions wait for explicit confirmation.**
+
+When proposing draft content:
+
+- When proposing wording, commands, diffs, PR bodies, issue comments, design changes, or other draft content for review, show it in the message first.
+- Do not encode a proposal inside an executable command, file edit, external post, or other action. Auto-approve makes "showing a draft by running the command" silently execute it.
+- Sequence: present the proposal in the message → wait for approval → execute only the approved action.
+
+Before consequential actions:
+
+- Irreversible, destructive, shared-state, or externally visible actions require explicit user confirmation before execution, including but not limited to committing changes, creating PRs/issues, pushing to remote, posting comments, and editing published content.
+- Draft the content or action, show it to the user, and wait for explicit confirmation.
+- Do not modify branch history without explicit instruction. The user's branches are their own; do not "sync", "update", or "clean up" branches unless explicitly told to.
+
+Respect the scope of user approval:
+
+- Never chain irreversible steps together. Complete one confirmed step, report back, then wait for the next instruction.
+- "Create X first" / "Do X first" means do only X. It does not authorize the next step.
+- "Wait for confirmation" or similar means stop and wait. Do not proceed with any irreversible action.
+- Plan feedback is not plan approval. User comments on a plan may be one of multiple points; do not treat them as permission to proceed or exit plan mode unless the user explicitly approves.
+
+### 5. Goal-Driven Execution and Verification
+
+**Define success criteria. Gather evidence. Loop until the goal is actually satisfied.**
+
+Before substantial work:
+
+- Transform tasks into verifiable goals. Know what would prove the task is complete.
+- For multi-step work, keep a brief plan with verification points. Update it when the approach changes.
+- If success criteria are ambiguous, clarify them or propose concrete criteria before executing against a vague goal.
+
+During execution:
+
+- Do not stop at the first plausible fix, first search hit, or first passing command if the user's goal requires broader validation.
+- If further progress requires user-only input, credentials, or a risky action that needs confirmation, stop and ask clearly.
+
+For investigations:
+
+- Investigations (tracing call chains, understanding architecture, reading large amounts of code) should be delegated to subagents unless the user explicitly asks you not to. They consume significant context and distract the main agent from orchestration and synthesis.
+- All investigation conclusions must include citations. Use inline markers (e.g. `[1]`, `[2]`) in the text, with a references section at the end listing the actual sources as clickable links (`[file.py:123-134](path/to/file.py#L123-L134)`, PR/issue URLs, etc.). Resolve file links relative to the current working directory; if you cannot be confident the relative link will resolve correctly, use an absolute path.
+- When an investigation traces a call chain or data flow, your user-facing response must include a **complete graph** (call graph, dependency graph, or data flow graph) as the primary deliverable.
 - Graph format:
   - Tree structure with indentation showing caller→callee or data flow direction.
   - Each node annotated with `file.py:123-134` source references.
@@ -38,6 +110,22 @@ This file provides user-level preferences that apply across all projects and rep
   - Brief inline comments on each node explaining what happens at that step.
   - No need for decorative ASCII boxes when clean tree lines (`│`, `├─`, `└─`, `↓`, `→`) are sufficient.
 - The graph should be globally complete — covering the full path from entry point to final effect. Every entity or concept mentioned in the summary should be traceable to a node in the graph, so the reader can map it back to a specific point in the chain rather than wondering "where did this come from?".
+
+When reporting findings:
+
+- Support non-trivial diagnoses, recommendations, risk judgments, and completion claims with evidence from code, docs, tests, tool output, or user-provided facts.
+- Use confidence labels when they clarify uncertainty:
+  - `Confirmed` — directly supported by code, docs, test output, tool output, or user-provided facts.
+  - `Inferred` — strongly suggested by evidence, but not directly proven.
+  - `Needs validation` — plausible but unverified; do not act on it as fact without checking.
+- Do not clutter routine edits or obvious facts with labels. Use them where a mistaken claim would change what you do next.
+
+Before claiming completion:
+
+- Verify before claiming done. Run the relevant tests, checks, builds, manual UI flows, searches, or command validations that match the task.
+- When verification cannot be performed, say so explicitly and explain what remains unverified.
+- If verification fails, diagnose and continue when safe. Do not summarize failure as completion.
+- Final reports should distinguish what changed, what was verified, and what remains open.
 
 ## Git/GitHub contribution workflow
 
