@@ -51,6 +51,14 @@ When your changes create orphans:
 - Remove imports, variables, helpers, files, or comments that your change made unused.
 - Do not remove pre-existing dead code unless asked. Mention it instead of deleting it.
 
+When editing long-lived text, including instructions, skills, memories, docs, and code comments:
+
+- Prevent stale-concept pollution: state the current model, invariant, or decision directly. Strip edit history, rejected alternatives, discarded mechanisms from the target text.
+- Removed concepts are removed, not negated. The final text should not preserve them as "not X", "doesn't use X", "rather than X", caveats or comparison tails.
+- Keep rationale/history only when it answers a likely reader question about an existing concept, or records a tempting attempted path with evidence.
+- Comments describe the current invariant and maintenance constraint. Do not insert changelog entries for edits, or leave future modification hints during migrations or rebases.
+- Before claiming the edit is fixed, reread changed text for residue: negated removed concepts, aliases of removed concepts, stale comparisons, and past/future time markers left by the edit process.
+
 For cleanup, rollback, removal, debug-code deletion, or "all occurrences" tasks:
 
 - Define the intended scope before acting. Search systematically; do not rely on memory or the most recently active file.
