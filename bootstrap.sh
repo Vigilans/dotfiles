@@ -2,26 +2,6 @@
 
 set -euo pipefail
 
-# Bootstrap requires bash 4+; macOS ships with 3.2.
-if [ "${BASH_VERSINFO[0]:-0}" -lt 4 ]; then
-    case "$(uname -s)" in
-        Darwin)
-            if ! command -v brew &>/dev/null; then
-                echo "ERROR: bash >= 4 required (found $BASH_VERSION), and Homebrew is not installed." >&2
-                echo "Install Homebrew first: https://brew.sh" >&2
-                exit 1
-            fi
-            echo "Updating bash via Homebrew (current: $BASH_VERSION)..."
-            brew install bash
-            exec "$(brew --prefix)/bin/bash" "$0" "$@"
-            ;;
-        *)
-            echo "ERROR: bash >= 4 required, found $BASH_VERSION" >&2
-            exit 1
-            ;;
-    esac
-fi
-
 export DOTFILES_ROOT="$( cd "$( dirname -- "${BASH_SOURCE:-$0}" )" >/dev/null 2>&1 && pwd )"; cd "$DOTFILES_ROOT"
 source "$DOTFILES_ROOT/scripts/dotfiles-rc.sh"
 

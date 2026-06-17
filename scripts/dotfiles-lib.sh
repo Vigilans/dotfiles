@@ -31,6 +31,7 @@ dotfiles_load_profile() {
     [ -f "$profile_dir/profile.sh" ] || return 1
     (
         set +u
+        name="" description="" supported_os=() depends=() after=() before=()
         source "$profile_dir/profile.sh" 2>/dev/null
         [ -z "$name" ] && return 1
         # Use ASCII Unit Separator (\x1f) — non-whitespace, won't collapse on
@@ -172,26 +173,24 @@ dotfiles_resolve_profiles() {
     local profiles=("$@")
 
     if [ ${#profiles[@]} -eq 0 ]; then
-        mapfile -t profiles < <(dotfiles_discover_profiles)
+        profiles=()
+        while IFS= read -r _p; do
+            profiles+=("$_p")
+        done < <(dotfiles_discover_profiles)
     fi
 
     local current_os
     current_os=$(dotfiles_current_os)
 
-    local -A meta_cache=()
-    local -A in_set=()
+    local _in_set=""
     local install_set=()
 
-    # Load metadata, filter by OS, and auto-pull depends transitively into install_set.
     _resolve_profiles() {
         local p="$1"
-        [ "${in_set[$p]:-}" = "1" ] && return 0
+        case " $_in_set " in *" $p "*) return 0 ;; esac
 
-        local m="${meta_cache[$p]:-}"
-        if [ -z "$m" ]; then
-            m=$(dotfiles_load_profile "$p") || { echo "Unknown profile: $p" >&2; return 1; }
-            meta_cache[$p]="$m"
-        fi
+        local m
+        m=$(dotfiles_load_profile "$p") || { echo "Unknown profile: $p" >&2; return 1; }
 
         local _n _d p_os deps _a _b
         IFS=$'\x1f' read -r _n _d p_os deps _a _b <<< "$m"
@@ -202,7 +201,7 @@ dotfiles_resolve_profiles() {
             esac
         fi
 
-        in_set[$p]=1
+        _in_set="$_in_set $p"
         install_set+=("$p")
 
         local dep
@@ -216,46 +215,50 @@ dotfiles_resolve_profiles() {
         _resolve_profiles "$profile" || return 1
     done
 
-    # Collect predecessor edges within install_set:
-    #   depends + after on P:  X precedes P  (if X in_set)
-    #   before on P:           P precedes X  (if X in_set)
-    local -A predecessors=()
+    # Collect predecessor edges within install_set.
+    # Each line in _edges is "target predecessor" meaning predecessor precedes target.
+    local _edges=""
     for profile in "${install_set[@]}"; do
-        local _n _d _o deps after before
-        IFS=$'\x1f' read -r _n _d _o deps after before <<< "${meta_cache[$profile]}"
+        local m _n _d _o deps after before
+        m=$(dotfiles_load_profile "$profile")
+        IFS=$'\x1f' read -r _n _d _o deps after before <<< "$m"
 
         local x
         for x in $deps $after; do
-            [ "${in_set[$x]:-}" = "1" ] || continue
-            predecessors[$profile]="${predecessors[$profile]:-} $x"
+            case " $_in_set " in *" $x "*) ;; *) continue ;; esac
+            _edges="${_edges}${profile} ${x}
+"
         done
         for x in $before; do
-            [ "${in_set[$x]:-}" = "1" ] || continue
-            predecessors[$x]="${predecessors[$x]:-} $profile"
+            case " $_in_set " in *" $x "*) ;; *) continue ;; esac
+            _edges="${_edges}${x} ${profile}
+"
         done
     done
 
-    # Topological sort over install_set using collected predecessor edges.
-    local -A visited=()
-    local -A in_stack=()
+    # Topological sort via DFS over collected edges.
+    local _visited="" _in_stack=""
     local order=()
 
     _topo_visit() {
         local p="$1"
-        [ "${visited[$p]:-}" = "1" ] && return 0
-        if [ "${in_stack[$p]:-}" = "1" ]; then
-            echo "Circular dependency: $p" >&2
-            return 1
-        fi
-        in_stack[$p]=1
+        case " $_visited " in *" $p "*) return 0 ;; esac
+        case " $_in_stack " in *" $p "*) echo "Circular dependency: $p" >&2; return 1 ;; esac
+        _in_stack="$_in_stack $p"
+
+        local _preds="" _t _x
+        while IFS=' ' read -r _t _x; do
+            [ -z "$_t" ] && continue
+            case "$_t" in "$p") _preds="$_preds $_x" ;; esac
+        done <<< "$_edges"
 
         local prev
-        for prev in ${predecessors[$p]:-}; do
+        for prev in $_preds; do
             _topo_visit "$prev" || return 1
         done
 
-        in_stack[$p]=0
-        visited[$p]=1
+        _in_stack="${_in_stack/ $p/}"
+        _visited="$_visited $p"
         order+=("$p")
     }
 
