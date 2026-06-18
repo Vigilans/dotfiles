@@ -496,6 +496,25 @@ dotfiles_upgrade() {
     dotfiles_run_phase "$profile_name" upgrade
 }
 
+dotfiles_ensure_gh() {
+    command -v gh &>/dev/null && return 0
+    echo "Installing GitHub CLI..."
+    if command -v brew &>/dev/null; then
+        brew install gh
+    elif command -v apt &>/dev/null; then
+        sudo apt install -y gh
+    elif command -v dnf &>/dev/null; then
+        sudo dnf install -y gh
+    elif command -v yum &>/dev/null; then
+        sudo yum install -y gh
+    elif command -v pacman &>/dev/null; then
+        sudo pacman -S --noconfirm github-cli
+    else
+        echo "ERROR: cannot install gh — no supported package manager found" >&2
+        return 1
+    fi
+}
+
 # Render Nunjucks templates from <src> tree to <dst> tree, mirroring structure
 # and stripping the .j2 suffix. Non-.j2 files are ignored. Context is
 # process.env — vars published via the .env channel are accessible as
