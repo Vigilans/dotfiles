@@ -155,18 +155,22 @@ _sync_claude_plugins() {
     done < <(jq -r '.extraKnownMarketplaces // {} | to_entries[] | "\(.key)\t\(.value.source.source)\t\(.value.source.repo // "")"' "$settings")
 
     local registry="$HOME/.claude/plugins/installed_plugins.json"
-    local plugin
-    while IFS= read -r plugin; do
+    local plugin enabled
+    while IFS=$'\t' read -r plugin enabled; do
         [ -z "$plugin" ] && continue
         if [ -f "$registry" ] && jq -e --arg p "$plugin" '.plugins[$p] // empty | length > 0' "$registry" >/dev/null; then
             [ "$mode" = "upgrade" ] || continue
             echo "[agents] updating plugin $plugin"
             claude plugin update "$plugin" || echo "[agents] failed to update $plugin" >&2
-        else
+        elif [ "$enabled" = "true" ]; then
             echo "[agents] installing plugin $plugin"
             claude plugin install "$plugin" || echo "[agents] failed to install $plugin" >&2
+        else
+            echo "[agents] installing disabled plugin $plugin"
+            claude plugin install "$plugin" || echo "[agents] failed to install $plugin" >&2
+            claude plugin disable "$plugin" || echo "[agents] failed to disable $plugin" >&2
         fi
-    done < <(jq -r '.enabledPlugins // {} | to_entries[] | select(.value == true) | .key' "$settings")
+    done < <(jq -r '.enabledPlugins // {} | to_entries[] | "\(.key)\t\(.value)"' "$settings")
 }
 
 if [ "$0" = "$BASH_SOURCE" ]; then
