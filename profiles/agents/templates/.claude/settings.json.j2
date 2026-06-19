@@ -9,6 +9,9 @@
     {%- if ANTHROPIC_MODEL %}
     "ANTHROPIC_MODEL": "{{ ANTHROPIC_MODEL }}",
     {%- endif %}
+    {%- if ANTHROPIC_DEFAULT_FABLE_MODEL %}
+    "ANTHROPIC_DEFAULT_FABLE_MODEL": "{{ ANTHROPIC_DEFAULT_FABLE_MODEL }}",
+    {%- endif %}
     {%- if ANTHROPIC_DEFAULT_OPUS_MODEL %}
     "ANTHROPIC_DEFAULT_OPUS_MODEL": "{{ ANTHROPIC_DEFAULT_OPUS_MODEL }}",
     {%- endif %}
@@ -20,6 +23,9 @@
     {%- endif %}
     {%- if ANTHROPIC_SMALL_FAST_MODEL %}
     "ANTHROPIC_SMALL_FAST_MODEL": "{{ ANTHROPIC_SMALL_FAST_MODEL }}",
+    {%- endif %}
+    {%- if ANTHROPIC_CUSTOM_MODEL_OPTION %}
+    "ANTHROPIC_CUSTOM_MODEL_OPTION": "{{ ANTHROPIC_CUSTOM_MODEL_OPTION }}",
     {%- endif %}
     {%- for key, val in os.environ %}
     {%-   if key.startsWith("CLAUDE_CODE_SUBAGENT_") and key.endsWith("_MODEL") %}
@@ -40,7 +46,8 @@
   "skipDangerousModePermissionPrompt": true,
   "skipAutoPermissionPrompt": true,
   "enabledPlugins": {
-    "safety-net@cc-marketplace": true
+    "safety-net@cc-marketplace": true,
+    "superpowers@claude-plugins-official": false
   },
   "extraKnownMarketplaces": {
     "cc-marketplace": {
