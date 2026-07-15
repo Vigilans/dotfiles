@@ -9,8 +9,8 @@
 #          general-purpose  → CLAUDE_CODE_SUBAGENT_GENERAL_PURPOSE_MODEL
 #          claude-code-guide → CLAUDE_CODE_SUBAGENT_CLAUDE_CODE_GUIDE_MODEL
 #
-# Fallback: CLAUDE_CODE_SUBAGENT_MODEL applies to all subagents
-# that don't have a type-specific override.
+# CLAUDE_CODE_SUBAGENT_MODEL remains Claude Code's native global override.
+# This hook leaves it to Claude Code and only handles type-specific overrides.
 #
 # Set these in settings.json → env, or export them in your shell.
 
@@ -27,7 +27,7 @@ fi
 UPPER_NAME=$(printf '%s' "$SUBAGENT_TYPE" | tr '[:lower:]-' '[:upper:]_')
 VAR_NAME="CLAUDE_CODE_SUBAGENT_${UPPER_NAME}_MODEL"
 
-MODEL="${!VAR_NAME:-${CLAUDE_CODE_SUBAGENT_MODEL:-}}"
+MODEL="${!VAR_NAME:-}"
 
 if [[ -z "$MODEL" ]]; then
   exit 0
