@@ -9,18 +9,11 @@
     {%- if ANTHROPIC_MODEL %}
     "ANTHROPIC_MODEL": "{{ ANTHROPIC_MODEL }}",
     {%- endif %}
-    {%- if ANTHROPIC_DEFAULT_FABLE_MODEL %}
-    "ANTHROPIC_DEFAULT_FABLE_MODEL": "{{ ANTHROPIC_DEFAULT_FABLE_MODEL }}",
-    {%- endif %}
-    {%- if ANTHROPIC_DEFAULT_OPUS_MODEL %}
-    "ANTHROPIC_DEFAULT_OPUS_MODEL": "{{ ANTHROPIC_DEFAULT_OPUS_MODEL }}",
-    {%- endif %}
-    {%- if ANTHROPIC_DEFAULT_SONNET_MODEL %}
-    "ANTHROPIC_DEFAULT_SONNET_MODEL": "{{ ANTHROPIC_DEFAULT_SONNET_MODEL }}",
-    {%- endif %}
-    {%- if ANTHROPIC_DEFAULT_HAIKU_MODEL %}
-    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "{{ ANTHROPIC_DEFAULT_HAIKU_MODEL }}",
-    {%- endif %}
+    {%- for key, val in os.environ %}
+    {%-   if key.startsWith("ANTHROPIC_DEFAULT_") and key.endsWith("_MODEL") %}
+    "{{ key }}": "{{ val }}",
+    {%-   endif %}
+    {%- endfor %}
     {%- if ANTHROPIC_SMALL_FAST_MODEL %}
     "ANTHROPIC_SMALL_FAST_MODEL": "{{ ANTHROPIC_SMALL_FAST_MODEL }}",
     {%- endif %}
