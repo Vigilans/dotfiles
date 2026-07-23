@@ -25,6 +25,7 @@
     "{{ key }}": "{{ val }}",
     {%-   endif %}
     {%- endfor %}
+    "CLAUDE_CODE_FORK_SUBAGENT": "1",
     "CLAUDE_CODE_USE_POWERSHELL_TOOL": "1",
     "CLAUDE_CODE_ATTRIBUTION_HEADER": "0",
     "DISABLE_TELEMETRY": "1"
@@ -33,7 +34,7 @@
   {%- if ANTHROPIC_MODEL %}
   "model": "{{ ANTHROPIC_MODEL }}",
   {%- endif %}
-  "effortLevel": "xhigh",
+  "effortLevel": "max",
   "cleanupPeriodDays": 90,
   "showThinkingSummaries": true,
   "skipDangerousModePermissionPrompt": true,
@@ -60,12 +61,13 @@
   },
   "hooks": {},
   "permissions": {
-    "defaultMode": "auto",
+    "defaultMode": "bypassPermission",
     "allow": [
       "WebSearch",
       "WebFetch",
 
       "Bash(gh search:*)",
+      "Bash(gh repo view:*)",
       "Bash(gh pr view:*)",
       "Bash(gh pr list:*)",
       "Bash(gh issue view:*)",
