@@ -21,7 +21,7 @@
     "ANTHROPIC_CUSTOM_MODEL_OPTION": "{{ ANTHROPIC_CUSTOM_MODEL_OPTION }}",
     {%- endif %}
     {%- for key, val in os.environ %}
-    {%-   if key.startsWith("CLAUDE_CODE_SUBAGENT_") and key.endsWith("_MODEL") %}
+    {%-   if key == "CLAUDE_CODE_SUBAGENT_MODE" or (key.startsWith("CLAUDE_CODE_SUBAGENT_") and key.endsWith("_MODEL")) %}
     "{{ key }}": "{{ val }}",
     {%-   endif %}
     {%- endfor %}
@@ -40,6 +40,7 @@
   "skipAutoPermissionPrompt": true,
   "enabledPlugins": {
     "safety-net@cc-marketplace": true,
+    "subagent-model@vigilans-agents": true,
     "superpowers@claude-plugins-official": false
   },
   "extraKnownMarketplaces": {
@@ -48,20 +49,16 @@
         "source": "github",
         "repo": "kenryu42/cc-marketplace"
       }
+    },
+    "vigilans-agents": {
+      "source": {
+        "source": "directory",
+        "path": "{{ HOME }}/.local/share/agents"
+      }
     }
   },
   "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Agent",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash ~/.claude/hooks/subagent-model.sh"
-          }
-        ]
-      }
-    ],
+    "PreToolUse": [],
     "PermissionRequest": [
       {
         "matcher": "",

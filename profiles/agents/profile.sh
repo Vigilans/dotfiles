@@ -181,8 +181,8 @@ _sync_claude_plugins() {
     }
 
     local known="$HOME/.claude/plugins/known_marketplaces.json"
-    local name src_type src_repo
-    while IFS=$'\t' read -r name src_type src_repo; do
+    local name src_type src_ref
+    while IFS=$'\t' read -r name src_type src_ref; do
         [ -z "$name" ] && continue
         if [ -f "$known" ] && jq -e --arg n "$name" 'has($n)' "$known" >/dev/null; then
             echo "[agents] updating marketplace $name"
@@ -190,15 +190,15 @@ _sync_claude_plugins() {
             continue
         fi
         case "$src_type" in
-            github)
-                echo "[agents] adding marketplace $name ($src_repo)"
-                claude plugin marketplace add "$src_repo" || echo "[agents] failed to add marketplace $name" >&2
+            github|directory)
+                echo "[agents] adding marketplace $name ($src_ref)"
+                claude plugin marketplace add "$src_ref" || echo "[agents] failed to add marketplace $name" >&2
                 ;;
             *)
                 echo "[agents] marketplace $name has unsupported source type '$src_type', skipping" >&2
                 ;;
         esac
-    done < <(jq -r '.extraKnownMarketplaces // {} | to_entries[] | "\(.key)\t\(.value.source.source)\t\(.value.source.repo // "")"' "$settings")
+    done < <(jq -r '.extraKnownMarketplaces // {} | to_entries[] | "\(.key)\t\(.value.source.source)\t\(.value.source.repo // .value.source.path // "")"' "$settings")
 
     local registry="$HOME/.claude/plugins/installed_plugins.json"
     local plugin enabled
