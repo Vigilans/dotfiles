@@ -39,8 +39,9 @@
   "skipDangerousModePermissionPrompt": true,
   "skipAutoPermissionPrompt": true,
   "enabledPlugins": {
-    "safety-net@cc-marketplace": true,
+    "osc-notify@vigilans-agents": true,
     "subagent-model@vigilans-agents": true,
+    "safety-net@cc-marketplace": true,
     "superpowers@claude-plugins-official": false
   },
   "extraKnownMarketplaces": {
@@ -57,41 +58,7 @@
       }
     }
   },
-  "hooks": {
-    "PreToolUse": [],
-    "PermissionRequest": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash ~/.claude/hooks/notify.sh"
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash ~/.claude/hooks/notify.sh"
-          }
-        ]
-      }
-    ],
-    "Notification": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash ~/.claude/hooks/notify.sh"
-          }
-        ]
-      }
-    ]
-  },
+  "hooks": {},
   "permissions": {
     "defaultMode": "auto",
     "allow": [
