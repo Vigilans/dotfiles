@@ -2,7 +2,7 @@
 
 Cross-tool config for AGENTS.md-aware coding agents (Claude Code, Codex, opencode, ...). Stows a single source of rules, skills, and agent definitions under `~/.agents/`, and links each tool's expected paths into it.
 
-Self-authored content — the `AGENTS.md` rules file, sub-agent definitions under `agents/`, and any first-party skills under `skills/` — is stowed directly from dotfiles. Vendor skills are not committed: they're declared in `.skill-lock.json` and restored by `npx skills add` at `install` time, so the lock is the source of truth for which third-party skills are pinned.
+Self-authored content — sub-agent definitions under `agents/` and any first-party skills under `skills/` — is stowed directly from dotfiles. The `AGENTS.md` rules file lives in [Vigilans/agents](https://github.com/Vigilans/agents), pulled in as a submodule at [dotfiles/.local/share/agents/](dotfiles/.local/share/agents/). Vendor skills are not committed: they're declared in `.skill-lock.json` and restored by `npx skills add` at `install` time, so the lock is the source of truth for which third-party skills are pinned.
 
 Per-tool config that can't be shared (Claude Code's `settings.json`, hooks) is rendered at `package` time from [templates/](templates/), interpolating values from the `.env` channel.
 
