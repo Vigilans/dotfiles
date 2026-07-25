@@ -4,3 +4,5 @@ tmp/
 .env
 .DS_Store
 profiles/local/
+.agents/skills/*
+!.agents/skills/dotfiles-*/
