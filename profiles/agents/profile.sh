@@ -16,6 +16,8 @@ before=()                   # order current profile before these during install
 
 # Install upstream packages/binaries (brew, apt, github-release, etc.)
 prepare() {
+    dotfiles_submodule_checkout "$PROFILE_ROOT/dotfiles/.local/share/agents"
+
     if ! command -v jq &>/dev/null || ! command -v node &>/dev/null || ! command -v rg &>/dev/null; then
         if command -v brew &>/dev/null; then
             brew install jq node ripgrep

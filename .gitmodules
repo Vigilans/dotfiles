@@ -1,3 +1,6 @@
 [submodule "profiles/shell/dotfiles/.config/shell"]
 	path = profiles/shell/dotfiles/.config/shell
 	url = https://github.com/Vigilans/shell.git
+[submodule "profiles/agents/dotfiles/.local/share/agents"]
+	path = profiles/agents/dotfiles/.local/share/agents
+	url = https://github.com/Vigilans/agents.git

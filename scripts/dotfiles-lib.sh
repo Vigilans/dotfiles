@@ -515,6 +515,37 @@ dotfiles_ensure_gh() {
     fi
 }
 
+# Check out a profile's submodule at the commit the superproject locks. The
+# tracked lock decides the version, so an upstream change reaches other machines
+# by being bumped here.
+#
+# Skipped when the submodule carries commits the lock doesn't contain:
+# `submodule update` checks out unconditionally and would detach away from them
+# without warning.
+dotfiles_submodule_checkout() {
+    local sub="$1"
+    local state current locked
+    state=$(git -C "$DOTFILES_ROOT" submodule status -- "$sub")
+
+    # "-": submodule not checked out — nothing to compare against the lock yet.
+    if [ "${state:0:1}" != "-" ]; then
+        # No lock to check out while the gitlink is staged but not committed.
+        locked=$(git -C "$DOTFILES_ROOT" ls-tree HEAD "$sub" | awk '{print $3}')
+        [ -n "$locked" ] || return 0
+
+        current=$(git -C "$sub" rev-parse HEAD)
+        if [ "$current" != "$locked" ] && \
+           ! git -C "$sub" merge-base --is-ancestor "$current" "$locked"; then
+            echo "[$name] submodule has commits the dotfiles lock doesn't carry — skipping checkout." >&2
+            echo "[$name] If this is intentional, bump the superproject:" >&2
+            echo "[$name]     cd \"\$DOTFILES_ROOT\" && git add \"$sub\" && git commit -m 'Bump $name'" >&2
+            return 0
+        fi
+    fi
+
+    git -C "$DOTFILES_ROOT" submodule update --init --recursive -- "$sub"
+}
+
 # Render Nunjucks templates from <src> tree to <dst> tree, mirroring structure
 # and stripping the .j2 suffix. Non-.j2 files are ignored. Context is
 # process.env — vars published via the .env channel are accessible as

@@ -16,8 +16,7 @@ before=()
 BOOTSTRAP="$PROFILE_ROOT/dotfiles/.config/shell/bootstrap.sh"
 
 prepare() {
-    git -C "$DOTFILES_ROOT" submodule update --init --recursive \
-        -- "$PROFILE_ROOT/dotfiles/.config/shell"
+    dotfiles_submodule_checkout "$PROFILE_ROOT/dotfiles/.config/shell"
     bash "$BOOTSTRAP" prepare
 }
 
@@ -32,23 +31,7 @@ install() {
 }
 
 upgrade() {
-    local sub="$PROFILE_ROOT/dotfiles/.config/shell"
-    local current locked
-    current=$(git -C "$sub" rev-parse HEAD)
-    locked=$(git -C "$DOTFILES_ROOT" ls-tree HEAD "$sub" | awk '{print $3}')
-
-    # Skip sync if submodule is ahead of the superproject lock —
-    # otherwise `submodule update --checkout` would silently rewind
-    # commits the user pulled but didn't bump in the superproject yet.
-    if [ "$current" != "$locked" ] && \
-       git -C "$sub" merge-base --is-ancestor "$locked" "$current"; then
-        echo "[shell] submodule is ahead of dotfiles lock — skipping sync." >&2
-        echo "[shell] If this is intentional, bump the dotfiles superproject:" >&2
-        echo "[shell]     cd \"\$DOTFILES_ROOT\" && git add \"$sub\" && git commit -m 'Bump shell'" >&2
-    else
-        git -C "$DOTFILES_ROOT" submodule update --init --recursive -- "$sub"
-    fi
-
+    dotfiles_submodule_checkout "$PROFILE_ROOT/dotfiles/.config/shell"
     bash "$BOOTSTRAP" upgrade
 }
 
