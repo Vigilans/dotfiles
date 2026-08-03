@@ -1,0 +1,100 @@
+{#- Canonical model registry (AGENTS_<ALIAS>_MODEL) rendered as a Codex model
+    catalog. Codex requires a full ModelInfo per entry — including the base
+    instructions prompt — so every entry clones the prototype `package` exported
+    from the installed binary, and only canonical fields are patched. -#}
+{%- set prototype = fs.readFile(PROFILE_ROOT + "/build/codex-models.json") %}
+{%- if not prototype %}
+{%-   set _ = fail("missing build/codex-models.json — run the profile's package phase") %}
+{%- endif %}
+{%- set base = json.parse(prototype).models | selectattr("visibility", "equalto", "list") | first %}
+{%- if not base %}
+{%-   set _ = fail("no picker-visible model in the Codex catalog prototype") %}
+{%- endif %}
+{%- set reasoning_levels = [
+      { "effort": "minimal", "description": "Fastest responses with minimal reasoning" },
+      { "effort": "low", "description": "Fast responses with lighter reasoning" },
+      { "effort": "medium", "description": "Balances speed and reasoning depth for everyday tasks" },
+      { "effort": "high", "description": "Greater reasoning depth for complex problems" },
+      { "effort": "xhigh", "description": "Extra high reasoning depth for complex problems" },
+      { "effort": "max", "description": "Maximum reasoning depth for the hardest problems" }
+    ] %}
+{%- set efforts = [] %}
+{%- for level in reasoning_levels %}
+{%-   set _ = efforts.push(level.effort) %}
+{%- endfor %}
+{#- Codex leads with the GPT aliases: with no `model` in config.toml the first
+    picker-visible entry becomes the default on a fresh install. -#}
+{%- set ordered = ["GPT", "GPT_TERRA", "GPT_LUNA", "FABLE", "OPUS", "SONNET", "HAIKU"] %}
+{%- set aliases = [] %}
+{%- for key, val in os.environ %}
+{%-   if key.startsWith("AGENTS_") and key.endsWith("_MODEL") %}
+{%-     set _ = aliases.push(key.slice(7, -6)) %}
+{%-   endif %}
+{%- endfor %}
+{%- for alias in aliases | sort %}
+{%-   if not ordered.includes(alias) %}
+{%-     set _ = ordered.push(alias) %}
+{%-   endif %}
+{%- endfor %}
+{#- Aliases sharing one model collapse into a single entry; their metadata may
+    complement each other but must not disagree. -#}
+{%- set slugs = [] %}
+{%- set collected = {} %}
+{%- for alias in ordered %}
+{%-   set model = os.environ["AGENTS_" + alias + "_MODEL"] %}
+{%-   if model %}
+{%-     set long_context = model.endsWith("[1m]") %}
+{%-     set slug = model.slice(0, -4) if long_context else model %}
+{%-     set description = os.environ["AGENTS_" + alias + "_MODEL_DESCRIPTION"] %}
+{%-     set effort = os.environ["AGENTS_" + alias + "_REASONING_EFFORT"] %}
+{%-     if effort and not efforts.includes(effort) %}
+{%-       set _ = fail("AGENTS_" + alias + "_REASONING_EFFORT must be one of " + efforts.join(", ")) %}
+{%-     endif %}
+{%-     set seen = collected[slug] %}
+{%-     if seen %}
+{%-       if seen.long_context != long_context %}
+{%-         set _ = fail("aliases for " + slug + " disagree on the [1m] context annotation") %}
+{%-       endif %}
+{%-       if description and seen.description and description != seen.description %}
+{%-         set _ = fail("aliases for " + slug + " disagree on the model description") %}
+{%-       endif %}
+{%-       if effort and seen.effort and effort != seen.effort %}
+{%-         set _ = fail("aliases for " + slug + " disagree on the reasoning effort") %}
+{%-       endif %}
+{%-     else %}
+{%-       set _ = slugs.push(slug) %}
+{%-     endif %}
+{%-     set collected = json.merge(collected, slug, {
+          "long_context": long_context,
+          "description": (seen.description if seen else "") or description,
+          "effort": (seen.effort if seen else "") or effort
+        }) %}
+{%-   endif %}
+{%- endfor %}
+{%- set models = [] %}
+{%- for slug in slugs %}
+{%-   set entry = collected[slug] %}
+{%-   set context_window = 1000000 if entry.long_context else 272000 %}
+{%-   set model = base %}
+{%-   set model = json.merge(model, "slug", slug) %}
+{%-   set model = json.merge(model, "display_name", entry.description or slug) %}
+{%-   set model = json.merge(model, "description", null) %}
+{%-   set model = json.merge(model, "availability_nux", null) %}
+{%-   set model = json.merge(model, "default_reasoning_level", entry.effort or "medium") %}
+{%-   set model = json.merge(model, "supported_reasoning_levels", reasoning_levels) %}
+{%-   set model = json.merge(model, "context_window", context_window) %}
+{%-   set model = json.merge(model, "max_context_window", context_window) %}
+{%-   set model = json.merge(model, "visibility", "list") %}
+{%-   set model = json.merge(model, "supported_in_api", true) %}
+{#-   Responses Lite is OpenAI's private wire variant: it moves `tools` and
+      `instructions` into the input array, which leaves no top-level slot for
+      server-executed tools, so Codex drops web_search and image_generation
+      entirely. Third-party models need the standard Responses shape. -#}
+{%-   set model = json.merge(model, "use_responses_lite", false) %}
+{%-   set model = json.merge(model, "service_tiers", []) %}
+{%-   set model = json.merge(model, "additional_speed_tiers", []) %}
+{%-   set model = json.merge(model, "priority", loop.index) %}
+{%-   set model = json.merge(model, "multi_agent_version", "v2") %}
+{%-   set _ = models.push(model) %}
+{%- endfor -%}
+{{ { "models": models } | dump(2) }}

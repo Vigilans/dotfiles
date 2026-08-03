@@ -559,13 +559,34 @@ dotfiles_submodule_checkout() {
 render_templates_nunjucks() {
     local src="$1" dst="$2"
     [ -d "$src" ] || return 0
-    src="$src" dst="$dst" npx --yes -p nunjucks@^3 node -e "$(cat <<'JS'
+    src="$src" dst="$dst" npx --yes -p nunjucks@^3 -p smol-toml@^1 node -e "$(cat <<'JS'
         const path = require('path');
         const fs = require('fs');
         const npxBin = process.env.PATH.split(path.delimiter).find(p => /[\/\\]_npx[\/\\].+[\/\\]node_modules[\/\\]\.bin$/.test(p));
-        const nunjucks = require(require.resolve('nunjucks', { paths: [npxBin.replace(/[\/\\]\.bin$/, '')] }));
+        const resolveFromNpx = name => require(require.resolve(name, { paths: [npxBin.replace(/[\/\\]\.bin$/, '')] }));
+        const nunjucks = resolveFromNpx('nunjucks');
+        const toml = resolveFromNpx('smol-toml');
         const { src, dst } = process.env;
         const env = nunjucks.configure(src, { autoescape: false, throwOnUndefined: true });
+        env.addGlobal('fs', {
+            readFile(filename) {
+                return fs.existsSync(filename) ? fs.readFileSync(filename, 'utf8') : null;
+            }
+        });
+        env.addGlobal('fail', message => { throw new Error(message); });
+        env.addGlobal('toml', {
+            parse: toml.parse,
+            stringify: toml.stringify,
+            merge(target, key, value) {
+                return { ...target, [key]: value };
+            }
+        });
+        env.addGlobal('json', {
+            parse: JSON.parse,
+            merge(target, key, value) {
+                return { ...target, [key]: value };
+            }
+        });
         (function walk(rel) {
             for (const e of fs.readdirSync(path.join(src, rel), { withFileTypes: true })) {
                 const r = path.join(rel, e.name);

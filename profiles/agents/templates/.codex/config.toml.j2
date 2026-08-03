@@ -1,0 +1,41 @@
+{#- Codex rewrites config.toml at runtime (model/effort selections, marketplaces,
+    plugin state, trusted projects), so patch the owned keys into the existing
+    document and write the whole thing back instead of templating a fresh file.
+    Tables are merged rather than replaced, for the same reason. -#}
+{%- set config = toml.parse(fs.readFile(dst + "/.codex/config.toml") or "") %}
+
+{#- Endpoint -#}
+{%- set provider = AGENTS_MODEL_PROVIDER or "custom" %}
+{%- if AGENTS_BASE_URL %}
+{%-   set provider_config = {
+      "name": AGENTS_MODEL_PROVIDER_DESCRIPTION or provider,
+      "base_url": AGENTS_BASE_URL,
+      "requires_openai_auth": true,
+      "wire_api": "responses"
+    } %}
+{%-   if AGENTS_API_KEY %}
+{#-   auth.json holds one global credential, so a ChatGPT login would otherwise
+      send its bearer token here. A provider-level token short-circuits that
+      lookup and keeps model requests on this endpoint either way. -#}
+{%-     set provider_config = json.merge(provider_config, "experimental_bearer_token", AGENTS_API_KEY) %}
+{%-   endif %}
+{%-   set config = toml.merge(config, "model_provider", provider) %}
+{%-   set config = toml.merge(config, "model_providers", toml.merge(config.model_providers or {}, provider, provider_config)) %}
+{%- endif %}
+{%- set config = toml.merge(config, "model_catalog_json", "models.json") %}
+{%- set config = toml.merge(config, "model_reasoning_summary", "detailed") %}
+{%- set config = toml.merge(config, "web_search", "live") %}
+
+{#- Permissions -#}
+{%- set config = toml.merge(config, "sandbox_mode", "danger-full-access") %}
+{%- set config = toml.merge(config, "approval_policy", "on-request") %}
+
+{#- Product surfaces -#}
+{%- set config = toml.merge(config, "analytics", toml.merge(config.analytics or {},
+      "enabled", false)) %}
+{%- set config = toml.merge(config, "desktop", toml.merge(config.desktop or {},
+      "enabled-reasoning-efforts", ["low", "medium", "high", "xhigh", "ultra", "max"])) %}
+{%- set config = toml.merge(config, "desktop", toml.merge(config.desktop or {},
+      "conversationDetailMode", "STEPS_COMMANDS")) -%}
+
+{{- toml.stringify(config) }}

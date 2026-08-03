@@ -42,6 +42,18 @@ prepare() {
 
 # Assemble files in dotfiles/ before stowing (clone plugins, build artifacts, etc.)
 package() {
+    # Codex requires every catalog entry to carry a full ModelInfo, including a
+    # ~20KB base_instructions prompt. Take it from the installed binary so the
+    # prompt matches the runtime, and fall back to upstream when Codex is absent.
+    mkdir -p "$PROFILE_ROOT/build"
+    if ! codex debug models --bundled > "$PROFILE_ROOT/build/codex-models.json" 2>/dev/null; then
+        curl -fsSL https://raw.githubusercontent.com/openai/codex/main/codex-rs/models-manager/models.json \
+            -o "$PROFILE_ROOT/build/codex-models.json" || {
+            echo "[agents] failed to obtain a Codex model catalog prototype" >&2
+            return 1
+        }
+    fi
+
     render_templates_nunjucks "$PROFILE_ROOT/templates" "$PROFILE_ROOT/dotfiles"
 }
 

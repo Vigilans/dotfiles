@@ -4,11 +4,11 @@ Cross-tool config for AGENTS.md-aware coding agents (Claude Code, Codex, opencod
 
 Self-authored content — sub-agent definitions under `agents/` and any first-party skills under `skills/` — is stowed directly from dotfiles. The `AGENTS.md` rules file lives in [Vigilans/agents](https://github.com/Vigilans/agents), pulled in as a submodule at [dotfiles/.local/share/agents/](dotfiles/.local/share/agents/). Vendor skills are not committed: they're declared in `.skill-lock.json` and restored by `npx skills add` at `install` time, so the lock is the source of truth for which third-party skills are pinned.
 
-Per-tool config that can't be shared (Claude Code's `settings.json`, hooks) is rendered at `package` time from [templates/](templates/), interpolating values from the `.env` channel.
+Per-tool config that can't be shared (Claude Code's `settings.json`, Codex's `auth.json` / `config.toml` / `models.json`) is rendered at `package` time from [templates/](templates/), interpolating values from the `.env` channel.
 
-`prepare` installs runtime dependencies (`jq`, `node`). `install` also runs `claude plugin install` for plugins enabled in `settings.json`. Both `npx skills add` and plugin install are idempotent.
+`prepare` installs runtime dependencies (`jq`, `node`). `package` also exports a Codex model catalog prototype into `build/`. `install` also runs `claude plugin install` for plugins enabled in `settings.json`. Both `npx skills add` and plugin install are idempotent.
 
-The rendered `settings.json` is `.gitignore`'d so runtime mutations (Claude Code's `/effort`, etc.) don't produce diffs in dotfiles.
+The rendered `settings.json`, `config.toml`, `models.json`, and `auth.json` are `.gitignore`'d so runtime mutations (Claude Code's `/effort`, Codex's model picker, etc.) don't produce diffs in dotfiles.
 
 ## Inputs from other profiles
 
@@ -25,3 +25,5 @@ Endpoint and models are declared once, in a tool-agnostic schema this profile ow
 | `AGENTS_MODEL_SUPPORTS_EFFORT_SUFFIX` | Set to `true` for gateways that select effort through the model name rather than a request parameter. |
 
 `{% if VAR %}` guards drop the line when a variable is unset, so omitting the `secrets` profile just yields configs pointing at each tool's official endpoint.
+
+Codex rewrites its own `config.toml` at runtime — selected model and effort, marketplaces, plugin state, MCP paths, trusted projects — so [`templates/.codex/config.toml.j2`](templates/.codex/config.toml.j2) parses the existing file, patches only the keys it owns, and writes the whole document back.

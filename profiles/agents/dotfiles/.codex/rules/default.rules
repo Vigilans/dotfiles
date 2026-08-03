@@ -1,0 +1,83 @@
+# Mirrors the permission lists in .claude/settings.json.
+#
+# Under :danger-full-access the allow rules are inert — unmatched commands
+# already run unsandboxed. They matter if the profile is ever tightened: an
+# allow match bypasses the sandbox entirely, and only when every segment of the
+# command line is covered by one. Decisions combine as forbidden > prompt >
+# allow, so a longer prompt/forbidden rule always wins over a broader allow.
+#
+# `match` / `not_match` examples are validated when the file loads, so a rule
+# that stops matching what it claims fails at startup rather than silently.
+
+# --- allow: read-only inspection ---
+
+prefix_rule(
+    pattern = [["cat", "ls", "find", "grep", "rg", "head", "tail", "wc", "nl",
+                "jq", "realpath", "diff", "file", "stat", "tree", "which"]],
+    decision = "allow",
+)
+
+prefix_rule(pattern = ["git", ["status", "diff", "log", "show", "blame"]], decision = "allow")
+prefix_rule(pattern = ["git", "ls-files"], decision = "allow")
+prefix_rule(pattern = ["git", "submodule", "status"], decision = "allow")
+prefix_rule(pattern = ["git", "remote", "-v"], decision = "allow")
+
+prefix_rule(pattern = ["gh", "search"], decision = "allow")
+prefix_rule(pattern = ["gh", ["repo", "pr", "issue"], "view"], decision = "allow")
+prefix_rule(pattern = ["gh", ["pr", "issue"], "list"], decision = "allow")
+prefix_rule(pattern = ["gh", "api"], decision = "allow")
+
+prefix_rule(pattern = ["npm", "run"], decision = "allow")
+prefix_rule(pattern = ["playwright-cli", "click"], decision = "allow")
+
+# --- deny ---
+
+prefix_rule(
+    pattern = ["git", "push", ["origin", "upstream"], ["main", "master"]],
+    decision = "forbidden",
+    justification = "No direct pushes to the default branch.",
+    match = [["git", "push", "origin", "main"]],
+    not_match = [["git", "push", "origin", "vigilans/topic"]],
+)
+prefix_rule(
+    pattern = ["git", "push", ["--force", "-f"]],
+    decision = "forbidden",
+    justification = "No force pushes.",
+)
+prefix_rule(
+    pattern = ["git", "add", ["-A", "."]],
+    decision = "forbidden",
+    justification = "Stage paths explicitly.",
+    match = [["git", "add", "-A"]],
+    not_match = [["git", "add", "src/main.rs"]],
+)
+
+# --- ask: outward-facing mutations ---
+
+prefix_rule(pattern = ["git", "push"], decision = "prompt")
+
+prefix_rule(
+    pattern = ["gh", "pr", ["create", "edit", "comment", "merge", "close", "review"]],
+    decision = "prompt",
+)
+prefix_rule(
+    pattern = ["gh", "issue", ["create", "comment", "edit", "close"]],
+    decision = "prompt",
+)
+prefix_rule(pattern = ["gh", "repo", ["create", "edit", "delete"]], decision = "prompt")
+prefix_rule(
+    pattern = ["gh", "release", ["create", "upload", "edit", "delete"]],
+    decision = "prompt",
+)
+
+# `gh api` is allowed above for reads; writes take the stricter decision.
+prefix_rule(
+    pattern = ["gh", "api", ["-X", "--method"], ["POST", "PUT", "DELETE", "PATCH"]],
+    decision = "prompt",
+    match = [["gh", "api", "-X", "POST", "repos/o/r/issues"]],
+    not_match = [["gh", "api", "repos/o/r/issues"]],
+)
+prefix_rule(
+    pattern = ["gh", "api", ["-XPOST", "-XPUT", "-XDELETE", "-XPATCH"]],
+    decision = "prompt",
+)
