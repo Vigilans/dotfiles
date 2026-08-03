@@ -36,7 +36,7 @@
       "skillFolderHash": "c817f6f36acd483294144694a935a76d3e3eb101",
       "pluginName": "mattpocock-skills",
       "installedAt": "2026-07-23T14:18:47.872Z",
-      "updatedAt": "2026-07-23T14:18:47.872Z"
+      "updatedAt": "2026-08-03T09:36:26.239Z"
     },
     "grilling": {
       "source": "mattpocock/skills",
@@ -46,7 +46,7 @@
       "skillFolderHash": "10b0db61f9b3869243db8a1a0ee84f862139b94e",
       "pluginName": "mattpocock-skills",
       "installedAt": "2026-07-23T14:18:47.873Z",
-      "updatedAt": "2026-07-23T14:18:47.873Z"
+      "updatedAt": "2026-08-03T09:40:14.055Z"
     },
     "writing-skills": {
       "source": "obra/superpowers",
@@ -55,7 +55,7 @@
       "skillPath": "skills/writing-skills/SKILL.md",
       "skillFolderHash": "611ae23b2390aef2d90463b79dbcef3997adc5f4",
       "installedAt": "2026-07-23T14:44:16.483Z",
-      "updatedAt": "2026-07-26T02:40:19.403Z"
+      "updatedAt": "2026-08-03T10:04:28.118Z"
     }
   },
   "dismissed": {
