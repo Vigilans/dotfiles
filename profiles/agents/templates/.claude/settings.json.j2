@@ -1,3 +1,17 @@
+{#- Canonical model registry: AGENTS_<ALIAS>_MODEL, rendered as Claude Code's
+    pinned alias env vars. FABLE/OPUS/SONNET/HAIKU lead, remaining aliases sort. -#}
+{%- set aliases = [] %}
+{%- for key, val in os.environ %}
+{%-   if key.startsWith("AGENTS_") and key.endsWith("_MODEL") %}
+{%-     set _ = aliases.push(key.slice(7, -6)) %}
+{%-   endif %}
+{%- endfor %}
+{%- set ordered = ["FABLE", "OPUS", "SONNET", "HAIKU"] %}
+{%- for alias in aliases | sort %}
+{%-   if not ordered.includes(alias) %}
+{%-     set _ = ordered.push(alias) %}
+{%-   endif %}
+{%- endfor %}
 {
   "env": {
     {%- if ANTHROPIC_AUTH_TOKEN %}
@@ -9,9 +23,24 @@
     {%- if ANTHROPIC_MODEL %}
     "ANTHROPIC_MODEL": "{{ ANTHROPIC_MODEL }}",
     {%- endif %}
-    {%- for key, val in os.environ %}
-    {%-   if key.startsWith("ANTHROPIC_DEFAULT_") and key.endsWith("_MODEL") %}
-    "{{ key }}": "{{ val }}",
+    {%- for alias in ordered %}
+    {%-   set model = os.environ["AGENTS_" + alias + "_MODEL"] %}
+    {%-   if model %}
+    {%-     set effort = os.environ["AGENTS_" + alias + "_REASONING_EFFORT"] %}
+    {%-     set description = os.environ["AGENTS_" + alias + "_MODEL_DESCRIPTION"] %}
+    {#-     Gateways that select effort through the model name take the suffix
+            ahead of the [1m] context annotation. -#}
+    {%-     if AGENTS_MODEL_SUPPORTS_EFFORT_SUFFIX == "true" and effort %}
+    {%-       if model.endsWith("[1m]") %}
+    {%-         set model = model.slice(0, -4) + "-" + effort + "[1m]" %}
+    {%-       else %}
+    {%-         set model = model + "-" + effort %}
+    {%-       endif %}
+    {%-     endif %}
+    "ANTHROPIC_DEFAULT_{{ alias }}_MODEL": "{{ model }}",
+    {%-     if description %}
+    "ANTHROPIC_DEFAULT_{{ alias }}_MODEL_DESCRIPTION": "{{ description }}",
+    {%-     endif %}
     {%-   endif %}
     {%- endfor %}
     {%- if ANTHROPIC_SMALL_FAST_MODEL %}

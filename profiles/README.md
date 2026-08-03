@@ -59,7 +59,7 @@ Each `profile.sh` invocation re-reads every profile's `.env`. A profile can publ
 - `after=(B)` — soft ordering. If B is also being installed, it runs first; otherwise no-op.
 - `before=(B)` — mirror of `after`. If B is also being installed, this profile runs first.
 
-Example: the `secrets` profile is cloned from a private repo via `DOTFILES_EXTRA_PROFILES`. It writes `ANTHROPIC_AUTH_TOKEN` to its `.env`. The public `agents` profile reads that token in `package()` to render `settings.json`. When both are installed, `secrets` must run first. Declare the order from the `secrets` side so the public `agents` profile stays unaware of it:
+Example: the `secrets` profile is cloned from a private repo via `DOTFILES_EXTRA_PROFILES`. It writes `AGENTS_API_KEY` to its `.env`. The public `agents` profile reads that key in `package()` to render `settings.json`. When both are installed, `secrets` must run first. Declare the order from the `secrets` side so the public `agents` profile stays unaware of it:
 
 ```bash
 # secrets/profile.sh

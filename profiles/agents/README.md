@@ -12,4 +12,16 @@ The rendered `settings.json` is `.gitignore`'d so runtime mutations (Claude Code
 
 ## Inputs from other profiles
 
-[`templates/.claude/settings.json.j2`](templates/.claude/settings.json.j2) consumes env vars from the [`.env` channel](../README.md#env-channel) — e.g. a private `secrets` profile can contribute `ANTHROPIC_AUTH_TOKEN`, `ANTHROPIC_BASE_URL`, `ANTHROPIC_MODEL`, etc. `{% if VAR %}` guards drop the line when a variable is unset, so omitting the `secrets` profile just yields a `settings.json` that uses Anthropic official endpoint.
+Endpoint and models are declared once, in a tool-agnostic schema this profile owns, and each tool's template adapts them into its own config format. A private `secrets` profile publishes them through the [`.env` channel](../README.md#env-channel):
+
+| Variable | Meaning |
+|---|---|
+| `AGENTS_BASE_URL` | Gateway endpoint every agent talks to. |
+| `AGENTS_API_KEY` | Credential for that endpoint. |
+| `AGENTS_MODEL_PROVIDER` | Provider name, for tools that require one. |
+| `AGENTS_<ALIAS>_MODEL` | Canonical model ID. Declaring one is what registers `<ALIAS>`. A trailing `[1m]` marks a 1M-context deployment. |
+| `AGENTS_<ALIAS>_MODEL_DESCRIPTION` | Display name shown in model pickers. |
+| `AGENTS_<ALIAS>_REASONING_EFFORT` | Default effort for the model: `minimal`, `low`, `medium`, `high`, `xhigh`, or `max`. |
+| `AGENTS_MODEL_SUPPORTS_EFFORT_SUFFIX` | Set to `true` for gateways that select effort through the model name rather than a request parameter. |
+
+`{% if VAR %}` guards drop the line when a variable is unset, so omitting the `secrets` profile just yields configs pointing at each tool's official endpoint.
