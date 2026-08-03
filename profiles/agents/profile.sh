@@ -171,6 +171,7 @@ _install_claude_code() {
             set -o pipefail
             curl -fsSL https://raw.githubusercontent.com/Vigilans/clawgod/dev/install.sh | CLAWGOD_DIR="$clawgod_dir" bash
         ) || return 1
+        _configure_vscode_clawgod || return 1
     elif ! command -v claude &>/dev/null; then
         npm install -g @anthropic-ai/claude-code || return 1
     fi
@@ -231,6 +232,57 @@ _sync_claude_plugins() {
             claude plugin disable "$plugin" || echo "[agents] failed to disable $plugin" >&2
         fi
     done < <(jq -r '.enabledPlugins // {} | to_entries[] | "\(.key)\t\(.value)"' "$settings")
+}
+
+# Point existing local and Remote SSH VS Code settings at the PATH launcher.
+_configure_vscode_clawgod() {
+    local settings=("$HOME/.vscode-server/data/Machine/settings.json")
+    case "$(dotfiles_current_os)" in
+        linux) settings+=("${XDG_CONFIG_HOME:-$HOME/.config}/Code/User/settings.json") ;;
+        macos) settings+=("$HOME/Library/Application Support/Code/User/settings.json") ;;
+    esac
+
+    local existing=() file
+    for file in "${settings[@]}"; do
+        [ -f "$file" ] && existing+=("$file")
+    done
+    [ ${#existing[@]} -gt 0 ] || return 0
+
+    npx --yes -p jsonc-parser@^3 node -e "$(cat <<'JS'
+        const path = require('path');
+        const fs = require('fs');
+        const npxBin = process.env.PATH.split(path.delimiter).find(p => /[\/\\]_npx[\/\\].+[\/\\]node_modules[\/\\]\.bin$/.test(p));
+        const jsonc = require(require.resolve('jsonc-parser', { paths: [npxBin.replace(/[\/\\]\.bin$/, '')] }));
+
+        for (const file of process.argv.slice(1)) {
+            const text = fs.readFileSync(file, 'utf8');
+            const source = text.trim() ? text : '{}';
+            const errors = [];
+            const root = jsonc.parseTree(source, errors, { allowTrailingComma: true });
+            if (errors.length || root?.type !== 'object') {
+                throw new Error(`${file} is not a valid JSONC object`);
+            }
+
+            const setting = ['claudeCode.claudeProcessWrapper'];
+            const current = jsonc.findNodeAtLocation(root, setting);
+            if (current && jsonc.getNodeValue(current) === 'claude') continue;
+
+            const eol = text.includes('\r\n') ? '\r\n' : '\n';
+            const indent = text.match(/^[ \t]+(?=")/m)?.[0];
+            const edits = jsonc.modify(source, setting, 'claude', {
+                formattingOptions: {
+                    insertSpaces: !indent?.includes('\t'),
+                    tabSize: indent?.length || 4,
+                    eol
+                }
+            });
+            if (edits.length) {
+                fs.writeFileSync(file, jsonc.applyEdits(source, edits));
+                console.log(`[agents] configured ClawGod for VS Code in ${file}`);
+            }
+        }
+JS
+)" "${existing[@]}"
 }
 
 if [ "$0" = "$BASH_SOURCE" ]; then
