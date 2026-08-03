@@ -11,14 +11,18 @@
 {%-   if not ordered.includes(alias) %}
 {%-     set _ = ordered.push(alias) %}
 {%-   endif %}
-{%- endfor %}
+{%- endfor -%}
 {
   "env": {
-    {%- if ANTHROPIC_AUTH_TOKEN %}
-    "ANTHROPIC_AUTH_TOKEN": "{{ ANTHROPIC_AUTH_TOKEN }}",
+    {%- if AGENTS_API_KEY %}
+    {%-   if AGENTS_CLAUDE_SUBSCRIPTION_LOGIN == "true" and AGENTS_MODEL_PROVIDER == "litellm" %}
+    "ANTHROPIC_CUSTOM_HEADERS": "x-litellm-api-key: {{ AGENTS_API_KEY }}",
+    {%-   else %}
+    "ANTHROPIC_AUTH_TOKEN": "{{ AGENTS_API_KEY }}",
+    {%-   endif %}
     {%- endif %}
-    {%- if ANTHROPIC_BASE_URL %}
-    "ANTHROPIC_BASE_URL": "{{ ANTHROPIC_BASE_URL }}",
+    {%- if AGENTS_BASE_URL %}
+    "ANTHROPIC_BASE_URL": "{{ AGENTS_BASE_URL }}",
     {%- endif %}
     {%- if ANTHROPIC_MODEL %}
     "ANTHROPIC_MODEL": "{{ ANTHROPIC_MODEL }}",

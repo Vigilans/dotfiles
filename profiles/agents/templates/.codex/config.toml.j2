@@ -10,7 +10,7 @@
 {%-   set provider_config = {
       "name": AGENTS_MODEL_PROVIDER_DESCRIPTION or provider,
       "base_url": AGENTS_BASE_URL,
-      "requires_openai_auth": true,
+      "requires_openai_auth": AGENTS_CODEX_CHATGPT_LOGIN == "true",
       "wire_api": "responses"
     } %}
 {%-   if AGENTS_API_KEY %}
