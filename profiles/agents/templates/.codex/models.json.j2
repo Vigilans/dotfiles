@@ -24,7 +24,7 @@
 {%- endfor %}
 {#- Codex leads with the GPT aliases: with no `model` in config.toml the first
     picker-visible entry becomes the default on a fresh install. -#}
-{%- set ordered = ["GPT", "GPT_TERRA", "GPT_LUNA", "FABLE", "OPUS", "SONNET", "HAIKU"] %}
+{%- set ordered = ["GPT", "GPT_SOL", "GPT_TERRA", "GPT_LUNA", "FABLE", "OPUS", "SONNET", "HAIKU"] %}
 {%- set aliases = [] %}
 {%- for key, val in os.environ %}
 {%-   if key.startsWith("AGENTS_") and key.endsWith("_MODEL") %}
