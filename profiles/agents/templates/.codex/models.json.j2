@@ -36,8 +36,9 @@
 {%-     set _ = ordered.push(alias) %}
 {%-   endif %}
 {%- endfor %}
-{#- Aliases sharing one model collapse into a single entry; their metadata may
-    complement each other but must not disagree. -#}
+{#- Aliases sharing one model collapse into a single catalog entry (Codex keys
+    on slug = the model name sent to the API).
+    The first alias in ordered priority wins the default reasoning effort. -#}
 {%- set slugs = [] %}
 {%- set collected = {} %}
 {%- for alias in ordered %}
@@ -57,9 +58,6 @@
 {%-       endif %}
 {%-       if description and seen.description and description != seen.description %}
 {%-         set _ = fail("aliases for " + slug + " disagree on the model description") %}
-{%-       endif %}
-{%-       if effort and seen.effort and effort != seen.effort %}
-{%-         set _ = fail("aliases for " + slug + " disagree on the reasoning effort") %}
 {%-       endif %}
 {%-     else %}
 {%-       set _ = slugs.push(slug) %}
