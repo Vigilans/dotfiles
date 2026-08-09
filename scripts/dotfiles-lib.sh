@@ -482,6 +482,17 @@ dotfiles_install() {
     dotfiles_run_phase "$profile_name" install
 }
 
+dotfiles_package() {
+    local profile_name="$1"
+    local profile_dir
+    profile_dir=$(dotfiles_profile_dir "$profile_name") || { echo "Profile '$profile_name' not found" >&2; return 1; }
+
+    [ -f "$profile_dir/profile.sh" ] || { echo "Profile '$profile_name' not found" >&2; return 1; }
+
+    echo "[$profile_name] package"
+    dotfiles_run_phase "$profile_name" package
+}
+
 dotfiles_upgrade() {
     local profile_name="$1"
     local status

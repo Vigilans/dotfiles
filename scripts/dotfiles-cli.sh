@@ -61,6 +61,13 @@ cmd_install() {
     done
 }
 
+cmd_package() {
+    [ -z "${1:-}" ] && { echo "Usage: dotfiles package <profile>..." >&2; exit 2; }
+    for profile in "$@"; do
+        dotfiles_package "$profile"
+    done
+}
+
 cmd_uninstall() {
     [ -z "${1:-}" ] && { echo "Usage: dotfiles uninstall <profile>..." >&2; exit 2; }
     for profile in "$@"; do
@@ -113,6 +120,7 @@ case "${1:-}" in
     import)     shift; cmd_import "$@" ;;
     status)     shift; cmd_status "$@" ;;
     install)    shift; cmd_install "$@" ;;
+    package)    shift; cmd_package "$@" ;;
     uninstall)  shift; cmd_uninstall "$@" ;;
     upgrade)    shift; cmd_upgrade "$@" ;;
     self)       shift; cmd_self "$@" ;;
@@ -135,6 +143,7 @@ case "${1:-}" in
         echo "Installation:"
         echo "  status      Show detailed install status for a profile"
         echo "  install     Install a profile (prepare + package + stow)"
+        echo "  package     Regenerate a profile's dotfiles (package phase only)"
         echo "  uninstall   Uninstall a profile (unstow from \$HOME)"
         echo "  upgrade     Upgrade an installed profile"
         echo ""

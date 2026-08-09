@@ -4,11 +4,11 @@ _dotfiles() {
 
     case "$prev" in
         dotfiles)
-            COMPREPLY=($(compgen -W "list create remove import status install uninstall upgrade self completion" -- "$cur"))
+            COMPREPLY=($(compgen -W "list create remove import status install package uninstall upgrade self completion" -- "$cur"))
             ;;
         create)
             ;;
-        remove|import|status|install|uninstall|upgrade)
+        remove|import|status|install|package|uninstall|upgrade)
             COMPREPLY=($(compgen -W "$(dotfiles list 2>/dev/null | tail -n +2 | awk '{print $1}')" -- "$cur"))
             ;;
         self)
