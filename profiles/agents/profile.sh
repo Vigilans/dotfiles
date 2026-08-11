@@ -228,13 +228,13 @@ _sync_claude_plugins() {
         [ -z "$name" ] && continue
         if [ -f "$known" ] && jq -e --arg n "$name" 'has($n)' "$known" >/dev/null; then
             echo "[agents] updating marketplace $name"
-            claude plugin marketplace update "$name" || echo "[agents] failed to update marketplace $name" >&2
+            claude plugin marketplace update "$name" || { echo "[agents] failed to update marketplace $name" >&2; return 1; }
             continue
         fi
         case "$src_type" in
             github|directory)
                 echo "[agents] adding marketplace $name ($src_ref)"
-                claude plugin marketplace add "$src_ref" || echo "[agents] failed to add marketplace $name" >&2
+                claude plugin marketplace add "$src_ref" || { echo "[agents] failed to add marketplace $name" >&2; return 1; }
                 ;;
             *)
                 echo "[agents] marketplace $name has unsupported source type '$src_type', skipping" >&2
@@ -243,22 +243,25 @@ _sync_claude_plugins() {
     done < <(jq -r '.extraKnownMarketplaces // {} | to_entries[] | "\(.key)\t\(.value.source.source)\t\(.value.source.repo // .value.source.path // "")"' "$settings")
 
     local registry="$HOME/.claude/plugins/installed_plugins.json"
+    local rc=0
     local plugin enabled
     while IFS=$'\t' read -r plugin enabled; do
         [ -z "$plugin" ] && continue
         if [ -f "$registry" ] && jq -e --arg p "$plugin" '.plugins[$p] // empty | length > 0' "$registry" >/dev/null; then
             [ "$mode" = "upgrade" ] || continue
             echo "[agents] updating plugin $plugin"
-            claude plugin update "$plugin" || echo "[agents] failed to update $plugin" >&2
+            claude plugin update "$plugin" || { echo "[agents] failed to update $plugin" >&2; rc=1; }
         elif [ "$enabled" = "true" ]; then
             echo "[agents] installing plugin $plugin"
-            claude plugin install "$plugin" || echo "[agents] failed to install $plugin" >&2
+            claude plugin install "$plugin" || { echo "[agents] failed to install $plugin" >&2; rc=1; }
         else
             echo "[agents] installing disabled plugin $plugin"
-            claude plugin install "$plugin" || echo "[agents] failed to install $plugin" >&2
-            claude plugin disable "$plugin" || echo "[agents] failed to disable $plugin" >&2
+            claude plugin install "$plugin" || { echo "[agents] failed to install $plugin" >&2; rc=1; }
+            claude plugin disable "$plugin" || { echo "[agents] failed to disable $plugin" >&2; rc=1; }
         fi
     done < <(jq -r '.enabledPlugins // {} | to_entries[] | "\(.key)\t\(.value)"' "$settings")
+
+    return "$rc"
 }
 
 # Point existing local and Remote SSH VS Code settings at the PATH launcher.
