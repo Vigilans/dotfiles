@@ -4,11 +4,11 @@ Cross-tool config for AGENTS.md-aware coding agents (Claude Code, Codex, opencod
 
 Self-authored content — sub-agent definitions under `agents/` and any first-party skills under `skills/` — is stowed directly from dotfiles. The `AGENTS.md` rules file lives in [Vigilans/agents](https://github.com/Vigilans/agents), pulled in as a submodule at [dotfiles/.local/share/agents/](dotfiles/.local/share/agents/). Vendor skills are not committed: they're declared in `.skill-lock.json` and restored by `npx skills add` at `install` time, so the lock is the source of truth for which third-party skills are pinned.
 
-Per-tool config that can't be shared (Claude Code's `settings.json`, Codex's `auth.json` / `config.toml` / `models.json`) is rendered at `package` time from [templates/](templates/), interpolating values from the `.env` channel.
+Per-tool config that can't be shared (Claude Code's `settings.json`, Codex's `config.toml` / `models.json`) is rendered at `package` time from [templates/](templates/), interpolating values from the `.env` channel.
 
-`prepare` installs runtime dependencies (`jq`, `node`). `package` also exports a Codex model catalog prototype into `build/`. `install` also runs `claude plugin install` for plugins enabled in `settings.json`. Both `npx skills add` and plugin install are idempotent.
+`prepare` installs runtime dependencies (`jq`, `node`, `ripgrep`) and installs or updates the standalone Codex CLI on Linux and macOS. `package` exports a Codex model catalog prototype into `build/`. `install` restores vendor skills, ensures Claude Code is available, and syncs configured plugins. `upgrade` updates Codex, vendor skills, Claude plugins, and ClawGod when selected.
 
-The rendered `settings.json`, `config.toml`, `models.json`, and `auth.json` are `.gitignore`'d so runtime mutations (Claude Code's `/effort`, Codex's model picker, etc.) don't produce diffs in dotfiles.
+The rendered `settings.json`, `config.toml`, and `models.json` are `.gitignore`'d so runtime mutations (Claude Code's `/effort`, Codex's model picker, etc.) don't produce diffs in dotfiles. Codex's runtime-owned `auth.json` is ignored separately.
 
 ## Inputs from other profiles
 
