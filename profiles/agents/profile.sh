@@ -18,17 +18,21 @@ before=()                   # order current profile before these during install
 prepare() {
     dotfiles_submodule_checkout "$PROFILE_ROOT/dotfiles/.local/share/agents"
 
-    if ! command -v jq &>/dev/null || ! command -v node &>/dev/null || ! command -v rg &>/dev/null; then
+    if ! command -v jq &>/dev/null \
+        || ! command -v node &>/dev/null \
+        || ! command -v npm &>/dev/null \
+        || ! command -v npx &>/dev/null \
+        || ! command -v rg &>/dev/null; then
         if command -v brew &>/dev/null; then
             brew install jq node ripgrep
         elif command -v apt &>/dev/null; then
-            sudo apt install -y jq nodejs ripgrep
+            sudo apt install -y jq nodejs npm ripgrep
         elif command -v dnf &>/dev/null; then
-            sudo dnf install -y jq nodejs ripgrep
+            sudo dnf install -y jq nodejs npm ripgrep
         elif command -v yum &>/dev/null; then
-            sudo yum install -y jq nodejs ripgrep
+            sudo yum install -y jq nodejs npm ripgrep
         elif command -v pacman &>/dev/null; then
-            sudo pacman -S --noconfirm jq nodejs ripgrep
+            sudo pacman -S --noconfirm jq nodejs npm ripgrep
         elif command -v apk &>/dev/null; then
             sudo apk add -q jq nodejs npm ripgrep
         elif command -v winget &>/dev/null; then
@@ -68,9 +72,8 @@ install() {
     _install_skills_link "$HOME/.agents/skills" "$HOME/.claude/skills" "$HOME/.config/opencode/skills"
     stow -v -d "$PROFILE_ROOT" -t "$HOME" dotfiles
     _install_vendor_skills
-    if _install_claude_code install; then
+    _install_claude_code install &&
         _sync_claude_plugins install
-    fi
 }
 
 # Re-prepare and update runtime components
@@ -80,9 +83,8 @@ upgrade() {
     stow -v -d "$PROFILE_ROOT" -t "$HOME" dotfiles
     _install_vendor_skills
     npx -y skills update -g -y
-    if _install_claude_code upgrade; then
+    _install_claude_code upgrade &&
         _sync_claude_plugins upgrade
-    fi
 }
 
 # Unstow dotfiles from $HOME and clean up
@@ -188,7 +190,15 @@ _install_claude_code() {
         ) || return 1
         _configure_vscode_clawgod || return 1
     elif ! command -v claude &>/dev/null; then
-        npm install -g @anthropic-ai/claude-code || return 1
+        case "$(dotfiles_current_os)" in
+            linux|macos)
+                (
+                    set -o pipefail
+                    curl -fsSL https://claude.ai/install.sh | bash
+                ) || return 1
+                ;;
+        esac
+        export PATH="$HOME/.local/bin:$PATH"
     fi
 
     command -v claude &>/dev/null
@@ -301,5 +311,6 @@ JS
 }
 
 if [ "$0" = "$BASH_SOURCE" ]; then
+    set -e
     "$@"
 fi
