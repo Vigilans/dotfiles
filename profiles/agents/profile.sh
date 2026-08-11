@@ -199,6 +199,8 @@ _install_claude_code() {
                 ;;
         esac
         export PATH="$HOME/.local/bin:$PATH"
+    elif [ "$mode" = "upgrade" ]; then
+        claude update || return 1
     fi
 
     command -v claude &>/dev/null
