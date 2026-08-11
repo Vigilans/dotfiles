@@ -73,6 +73,13 @@
 {%- for slug in slugs %}
 {%-   set entry = collected[slug] %}
 {%-   set context_window = 1000000 if entry.long_context else 272000 %}
+{%-   if not entry.long_context %}
+{%-     set auto_compact_token_limit = 200000 %}
+{%-   elif slug.toLowerCase().includes("deepseek") %}
+{%-     set auto_compact_token_limit = 900000 %}
+{%-   else %}
+{%-     set auto_compact_token_limit = 372000 %}
+{%-   endif %}
 {%-   set model = base %}
 {%-   set model = json.merge(model, "slug", slug) %}
 {%-   set model = json.merge(model, "display_name", entry.description or slug) %}
@@ -82,6 +89,7 @@
 {%-   set model = json.merge(model, "supported_reasoning_levels", reasoning_levels) %}
 {%-   set model = json.merge(model, "context_window", context_window) %}
 {%-   set model = json.merge(model, "max_context_window", context_window) %}
+{%-   set model = json.merge(model, "auto_compact_token_limit", auto_compact_token_limit) %}
 {%-   set model = json.merge(model, "visibility", "list") %}
 {%-   set model = json.merge(model, "supported_in_api", true) %}
 {#-   Responses Lite is OpenAI's private wire variant: it moves `tools` and
