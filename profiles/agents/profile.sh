@@ -38,6 +38,8 @@ prepare() {
             return 1
         fi
     fi
+
+    _install_codex
 }
 
 # Assemble files in dotfiles/ before stowing (clone plugins, build artifacts, etc.)
@@ -131,6 +133,19 @@ _install_vendor_skills() {
         echo "[agents] installing skill $skill from $source"
         npx -y skills add -g -y "$source" -s "$skill"
     done < <(jq -r '.skills | to_entries[] | "\(.key)\t\(.value.source)"' "$lock")
+}
+
+_install_codex() {
+    case "$(dotfiles_current_os)" in
+        linux|macos)
+            (
+                set -o pipefail
+                curl -fsSL https://chatgpt.com/codex/install.sh |
+                    CODEX_NON_INTERACTIVE=1 \
+                    PATH="${CODEX_INSTALL_DIR:-$HOME/.local/bin}:$PATH" sh
+            )
+            ;;
+    esac
 }
 
 _install_claude_code() {
