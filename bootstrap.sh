@@ -5,6 +5,27 @@ set -euo pipefail
 export DOTFILES_ROOT="$( cd "$( dirname -- "${BASH_SOURCE:-$0}" )" >/dev/null 2>&1 && pwd )"; cd "$DOTFILES_ROOT"
 source "$DOTFILES_ROOT/scripts/dotfiles-rc.sh"
 
+_use_ssh_submodule=0
+for arg in "$@"; do
+    case "$arg" in
+        --use-ssh-submodule) _use_ssh_submodule=1 ;;
+        *) echo "Unknown argument: $arg" >&2; exit 2 ;;
+    esac
+done
+
+# Keep tracked HTTPS URLs portable while using SSH credentials locally.
+if [ "$_use_ssh_submodule" -eq 1 ]; then
+    while read -r _key _url; do
+        case "$_url" in
+            https://github.com/*)
+                _submodule="${_key#submodule.}"
+                _submodule="${_submodule%.url}"
+                git config --local "submodule.$_submodule.url" "git@github.com:${_url#https://github.com/}"
+                ;;
+        esac
+    done < <(git config --file .gitmodules --get-regexp '^submodule\..*\.url$')
+fi
+
 # Clone external profiles
 if [ -n "${DOTFILES_EXTRA_PROFILES:-}" ]; then
     IFS=',' read -ra _extras <<< "${DOTFILES_EXTRA_PROFILES//[[:space:]]/}"
@@ -16,6 +37,11 @@ if [ -n "${DOTFILES_EXTRA_PROFILES:-}" ]; then
         if [ -d "$_target" ]; then
             echo "[$_name] already exists, skipping clone"
         else
+            if [ "$_use_ssh_submodule" -eq 1 ]; then
+                case "$_url" in
+                    https://github.com/*) _url="git@github.com:${_url#https://github.com/}" ;;
+                esac
+            fi
             echo "[$_name] cloning from $_url"
             git clone "$_url" "$_target"
             if ! dotfiles_is_profile_dir "$_target"; then
