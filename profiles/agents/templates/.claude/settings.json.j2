@@ -11,11 +11,17 @@
 {%-   if not ordered.includes(alias) %}
 {%-     set _ = ordered.push(alias) %}
 {%-   endif %}
+{%- endfor %}
+{%- set enabled_models = [] %}
+{%- for alias in (AGENTS_CLAUDE_CODE_ENABLED_MODELS or "").split(",") %}
+{%-   if alias.trim() %}
+{%-     set _ = enabled_models.push(alias.trim().toLowerCase()) %}
+{%-   endif %}
 {%- endfor -%}
 {
   "env": {
     {%- if AGENTS_API_KEY %}
-    {%-   if AGENTS_CLAUDE_SUBSCRIPTION_LOGIN == "true" and AGENTS_MODEL_PROVIDER == "litellm" %}
+    {%-   if AGENTS_CLAUDE_CODE_SUBSCRIPTION_LOGIN == "true" and AGENTS_MODEL_PROVIDER == "litellm" %}
     "ANTHROPIC_CUSTOM_HEADERS": "x-litellm-api-key: {{ AGENTS_API_KEY }}",
     {%-   else %}
     "ANTHROPIC_AUTH_TOKEN": "{{ AGENTS_API_KEY }}",
@@ -29,7 +35,7 @@
     {%- endif %}
     {%- for alias in ordered %}
     {%-   set model = os.environ["AGENTS_" + alias + "_MODEL"] %}
-    {%-   if model %}
+    {%-   if model and (not enabled_models.length or enabled_models.includes(alias.toLowerCase())) %}
     {%-     set effort = os.environ["AGENTS_" + alias + "_REASONING_EFFORT"] %}
     {%-     set description = os.environ["AGENTS_" + alias + "_MODEL_DESCRIPTION"] %}
     {#-     Gateways that select effort through the model name take the suffix

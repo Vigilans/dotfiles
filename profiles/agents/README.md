@@ -19,8 +19,10 @@ Endpoint and models are declared once, in a tool-agnostic schema this profile ow
 | `AGENTS_BASE_URL` | Gateway endpoint every agent talks to. |
 | `AGENTS_API_KEY` | Credential for that endpoint. |
 | `AGENTS_MODEL_PROVIDER` | Provider name, for tools that require one. |
-| `AGENTS_CLAUDE_SUBSCRIPTION_LOGIN` | Set to `true` to retain Claude subscription authentication if the configured provider supports a separate authentication method. |
+| `AGENTS_CLAUDE_CODE_SUBSCRIPTION_LOGIN` | Set to `true` to retain Claude subscription authentication if the configured provider supports a separate authentication method. |
+| `AGENTS_CLAUDE_CODE_ENABLED_MODELS` | Comma-separated model aliases enabled for Claude Code. Matching is case-insensitive; all registered aliases are enabled when unset. |
 | `AGENTS_CODEX_CHATGPT_LOGIN` | Set to `true` to require a Codex ChatGPT/API-key login while keeping the gateway credential provider-scoped. |
+| `AGENTS_CODEX_ENABLED_MODELS` | Comma-separated model aliases enabled for Codex. Matching is case-insensitive; all registered aliases are enabled when unset. |
 | `AGENTS_<ALIAS>_MODEL` | Canonical model ID. Declaring one is what registers `<ALIAS>`. A trailing `[1m]` marks a 1M-context deployment. |
 | `AGENTS_<ALIAS>_MODEL_DESCRIPTION` | Display name shown in model pickers. |
 | `AGENTS_<ALIAS>_REASONING_EFFORT` | Default effort for the model: `minimal`, `low`, `medium`, `high`, `xhigh`, or `max`. |

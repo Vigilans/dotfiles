@@ -36,6 +36,12 @@
 {%-     set _ = ordered.push(alias) %}
 {%-   endif %}
 {%- endfor %}
+{%- set enabled_models = [] %}
+{%- for alias in (AGENTS_CODEX_ENABLED_MODELS or "").split(",") %}
+{%-   if alias.trim() %}
+{%-     set _ = enabled_models.push(alias.trim().toLowerCase()) %}
+{%-   endif %}
+{%- endfor %}
 {#- Aliases sharing one model collapse into a single catalog entry (Codex keys
     on slug = the model name sent to the API).
     The first alias in ordered priority wins the default reasoning effort. -#}
@@ -43,7 +49,7 @@
 {%- set collected = {} %}
 {%- for alias in ordered %}
 {%-   set model = os.environ["AGENTS_" + alias + "_MODEL"] %}
-{%-   if model %}
+{%-   if model and (not enabled_models.length or enabled_models.includes(alias.toLowerCase())) %}
 {%-     set long_context = model.endsWith("[1m]") %}
 {%-     set slug = model.slice(0, -4) if long_context else model %}
 {%-     set description = os.environ["AGENTS_" + alias + "_MODEL_DESCRIPTION"] %}
