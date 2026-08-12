@@ -25,6 +25,7 @@
 {%- set config = toml.merge(config, "model_catalog_json", "models.json") %}
 {%- set config = toml.merge(config, "model_reasoning_summary", "detailed") %}
 {%- set config = toml.merge(config, "web_search", "live") %}
+{%- set config = toml.merge(config, "suppress_unstable_features_warning", true) %}
 
 {#- Permissions -#}
 {%- set config = toml.merge(config, "sandbox_mode", "danger-full-access") %}
