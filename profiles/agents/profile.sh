@@ -17,26 +17,24 @@ before=()                   # order current profile before these during install
 # Install upstream packages/binaries (brew, apt, github-release, etc.)
 prepare() {
     dotfiles_submodule_checkout "$PROFILE_ROOT/dotfiles/.local/share/agents"
+    dotfiles_ensure_node || return 1
 
     if ! command -v jq &>/dev/null \
-        || ! command -v node &>/dev/null \
-        || ! command -v npm &>/dev/null \
-        || ! command -v npx &>/dev/null \
         || ! command -v rg &>/dev/null; then
         if command -v brew &>/dev/null; then
-            brew install jq node ripgrep
+            brew install jq ripgrep
         elif command -v apt &>/dev/null; then
-            sudo apt install -y jq nodejs npm ripgrep
+            sudo apt install -y jq ripgrep
         elif command -v dnf &>/dev/null; then
-            sudo dnf install -y jq nodejs npm ripgrep
+            sudo dnf install -y jq ripgrep
         elif command -v yum &>/dev/null; then
-            sudo yum install -y jq nodejs npm ripgrep
+            sudo yum install -y jq ripgrep
         elif command -v pacman &>/dev/null; then
-            sudo pacman -S --noconfirm jq nodejs npm ripgrep
+            sudo pacman -S --noconfirm jq ripgrep
         elif command -v apk &>/dev/null; then
-            sudo apk add -q jq nodejs npm ripgrep
+            sudo apk add -q jq ripgrep
         elif command -v winget &>/dev/null; then
-            winget install -e --id jqlang.jq --id OpenJS.NodeJS.LTS --id BurntSushi.ripgrep.MSVC
+            winget install -e --id jqlang.jq --id BurntSushi.ripgrep.MSVC
         else
             echo "[agents] No supported package manager found" >&2
             return 1

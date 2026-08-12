@@ -558,6 +558,41 @@ dotfiles_submodule_checkout() {
     git -C "$DOTFILES_ROOT" submodule update --init --recursive -- "$sub"
 }
 
+dotfiles_ensure_node() {
+    command -v npm &>/dev/null && command -v npx &>/dev/null \
+        && node -e 'process.exit(parseInt(process.versions.node) >= 18 ? 0 : 1)' 2>/dev/null \
+        && return 0
+
+    if command -v brew &>/dev/null; then
+        brew install node
+    elif command -v apt &>/dev/null && dpkg --compare-versions "$(apt-cache policy nodejs | awk '/Candidate:/ {print $2}')" ge 18; then
+        sudo apt install -y nodejs npm
+    elif command -v dnf &>/dev/null && LC_ALL=C dnf -q info nodejs 2>/dev/null | awk '$1 == "Version" && $3 + 0 >= 18 {found=1} END {exit !found}'; then
+        sudo dnf install -y nodejs npm
+    elif command -v yum &>/dev/null && LC_ALL=C yum -q info nodejs 2>/dev/null | awk '$1 == "Version" && $3 + 0 >= 18 {found=1} END {exit !found}'; then
+        sudo yum install -y nodejs npm
+    elif command -v pacman &>/dev/null; then
+        sudo pacman -S --noconfirm nodejs npm
+    elif command -v apk &>/dev/null; then
+        sudo apk add -q nodejs npm
+    elif command -v winget &>/dev/null; then
+        winget install -e --id OpenJS.NodeJS.LTS
+    elif [ -x "${XDG_DATA_HOME:-"$HOME/.local/share"}/zinit/plugins/node/bin/node" ]; then
+        local zinit_home="${XDG_DATA_HOME:-"$HOME/.local/share"}/zinit"
+        local node_dir="$zinit_home/plugins/node"
+        local zinit_bin="$zinit_home/polaris/bin"
+
+        mkdir -p "$zinit_bin"
+        ln -sf "$node_dir/bin/node" "$zinit_bin/node"
+        ln -sf "$node_dir/lib/node_modules/npm/bin/npm-cli.js" "$zinit_bin/npm"
+        ln -sf "$node_dir/lib/node_modules/npm/bin/npx-cli.js" "$zinit_bin/npx"
+        export PATH="$zinit_bin:$PATH"
+    else
+        echo "ERROR: Node.js 18 or newer is required" >&2
+        return 1
+    fi
+}
+
 # Render Nunjucks templates from <src> tree to <dst> tree, mirroring structure
 # and stripping the .j2 suffix. Non-.j2 files are ignored. Context is
 # process.env — vars published via the .env channel are accessible as
