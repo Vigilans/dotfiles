@@ -31,6 +31,14 @@
 {%- set config = toml.merge(config, "approval_policy", "on-request") %}
 
 {#- Product surfaces -#}
+{%- set config = toml.merge(config, "features", toml.merge(config.features or {},
+      "memories", true)) %}
+{%- set config = toml.merge(config, "features", toml.merge(config.features or {},
+      "external_agent_memory_import", true)) %}
+{%- set config = toml.merge(config, "memories", toml.merge(config.memories or {},
+      "use_memories", true)) %}
+{%- set config = toml.merge(config, "memories", toml.merge(config.memories or {},
+      "generate_memories", true)) %}
 {%- set config = toml.merge(config, "analytics", toml.merge(config.analytics or {},
       "enabled", false)) %}
 {%- set config = toml.merge(config, "desktop", toml.merge(config.desktop or {},
