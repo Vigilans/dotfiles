@@ -3,9 +3,8 @@ if [ -z "${DOTFILES_ROOT:-}" ]; then
 fi
 
 # Guard prevents re-sourcing within the same shell. The guard is intentionally
-# NOT exported, so each subprocess (every profile phase invocation) gets a
-# fresh load — including a fresh read of all .env files from disk, which is
-# how profile-contributed env propagates across phases.
+# NOT exported, so each profile invocation gets a fresh read of all .env files
+# from disk. A full install keeps its phases in that same shell.
 if [ -z "${DOTFILES_RC_LOADED:-}" ]; then
     # Load bootstrap .env (user's main config, gitignored)
     set -a

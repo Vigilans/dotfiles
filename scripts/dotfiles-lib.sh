@@ -328,17 +328,16 @@ dotfiles_import() {
     stow --adopt -v -d "$profile_dir" -t "$HOME" dotfiles
 }
 
-dotfiles_run_phase() {
+dotfiles_run_profile() {
     local profile_name="$1"
-    local phase="$2"
+    local script="$2"
     local profile_dir
     profile_dir=$(dotfiles_profile_dir "$profile_name") || { echo "Profile '$profile_name' not found" >&2; return 1; }
 
     [ -f "$profile_dir/profile.sh" ] || { echo "Profile '$profile_name' not found" >&2; return 1; }
 
-    # Subprocess: profile.sh sets up its own env from rc.sh, dispatches via its
-    # trailing `if [ "$0" = "$BASH_SOURCE" ]; then "$@"; fi` block.
-    bash "$profile_dir/profile.sh" "$phase"
+    profile_dir="$profile_dir" profile_name="$profile_name" \
+        bash -c 'source "$profile_dir/profile.sh"; '"$script"
 }
 
 dotfiles_uninstall() {
@@ -353,7 +352,7 @@ dotfiles_uninstall() {
 
     _dotfiles_ensure_stow || return 1
 
-    dotfiles_run_phase "$profile_name" uninstall
+    dotfiles_run_profile "$profile_name" uninstall
 }
 
 _dotfiles_ensure_stow() {
@@ -470,16 +469,18 @@ dotfiles_install() {
 
     _dotfiles_ensure_stow || return 1
 
-    echo "[$profile_name] prepare"
-    dotfiles_run_phase "$profile_name" prepare
+    dotfiles_run_profile "$profile_name" '
+        echo "[$profile_name] prepare"
+        prepare || exit
 
-    echo "[$profile_name] package"
-    dotfiles_run_phase "$profile_name" package
+        echo "[$profile_name] package"
+        package || exit
 
-    _dotfiles_resolve_conflicts "$profile_name"
+        _dotfiles_resolve_conflicts "$profile_name" || exit
 
-    echo "[$profile_name] install"
-    dotfiles_run_phase "$profile_name" install
+        echo "[$profile_name] install"
+        install
+    '
 }
 
 dotfiles_package() {
@@ -490,7 +491,7 @@ dotfiles_package() {
     [ -f "$profile_dir/profile.sh" ] || { echo "Profile '$profile_name' not found" >&2; return 1; }
 
     echo "[$profile_name] package"
-    dotfiles_run_phase "$profile_name" package
+    dotfiles_run_profile "$profile_name" package
 }
 
 dotfiles_upgrade() {
@@ -504,7 +505,7 @@ dotfiles_upgrade() {
     fi
 
     echo "[$profile_name] upgrade"
-    dotfiles_run_phase "$profile_name" upgrade
+    dotfiles_run_profile "$profile_name" upgrade
 }
 
 dotfiles_ensure_gh() {
