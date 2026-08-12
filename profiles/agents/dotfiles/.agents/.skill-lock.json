@@ -43,19 +43,18 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/mattpocock/skills.git",
       "skillPath": "skills/productivity/grilling/SKILL.md",
-      "skillFolderHash": "10b0db61f9b3869243db8a1a0ee84f862139b94e",
-      "pluginName": "mattpocock-skills",
+      "skillFolderHash": "fd99bcbb818f7ef766b83656fb5fac0b58e223ad",
       "installedAt": "2026-07-23T14:18:47.873Z",
-      "updatedAt": "2026-08-03T09:40:14.055Z"
+      "updatedAt": "2026-08-12T17:09:05.434Z"
     },
     "writing-skills": {
       "source": "obra/superpowers",
       "sourceType": "github",
       "sourceUrl": "https://github.com/obra/superpowers.git",
       "skillPath": "skills/writing-skills/SKILL.md",
-      "skillFolderHash": "611ae23b2390aef2d90463b79dbcef3997adc5f4",
+      "skillFolderHash": "1768f7552ec98fc6b06aeea747a0c4ef6bde0473",
       "installedAt": "2026-07-23T14:44:16.483Z",
-      "updatedAt": "2026-08-03T10:04:28.118Z"
+      "updatedAt": "2026-08-12T17:09:07.501Z"
     }
   },
   "dismissed": {
