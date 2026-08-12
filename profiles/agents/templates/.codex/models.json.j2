@@ -84,7 +84,7 @@
 {%-   elif slug.toLowerCase().includes("deepseek") %}
 {%-     set auto_compact_token_limit = 900000 %}
 {%-   else %}
-{%-     set auto_compact_token_limit = 372000 %}
+{%-     set auto_compact_token_limit = 500000 %}
 {%-   endif %}
 {%-   set model = base %}
 {%-   set model = json.merge(model, "slug", slug) %}
