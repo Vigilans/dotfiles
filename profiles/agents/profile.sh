@@ -78,7 +78,7 @@ install() {
 upgrade() {
     prepare
     package
-    stow -v -d "$PROFILE_ROOT" -t "$HOME" dotfiles
+    stow -v -d "$PROFILE_ROOT" -t "$HOME" dotfiles || return 1
     _install_vendor_skills
     npx -y skills update -g -y
     _install_claude_code upgrade &&
