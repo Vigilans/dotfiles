@@ -337,7 +337,7 @@ dotfiles_run_profile() {
     [ -f "$profile_dir/profile.sh" ] || { echo "Profile '$profile_name' not found" >&2; return 1; }
 
     profile_dir="$profile_dir" profile_name="$profile_name" \
-        bash -c 'source "$profile_dir/profile.sh"; '"$script"
+        bash -c 'set -e; source "$profile_dir/profile.sh"; '"$script"
 }
 
 dotfiles_uninstall() {

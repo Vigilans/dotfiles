@@ -31,7 +31,22 @@
 {%- set config = toml.merge(config, "sandbox_mode", "danger-full-access") %}
 {%- set config = toml.merge(config, "approval_policy", "on-request") %}
 
-{#- Product surfaces -#}
+{#- Plugins -#}
+{%- set marketplaces = config.marketplaces or {} %}
+{%- set marketplace = marketplaces["cc-marketplace"] or {} %}
+{%- set marketplace = toml.merge(marketplace, "source_type", "git") %}
+{%- set marketplace = toml.merge(marketplace, "source",
+      "https://github.com/kenryu42/cc-marketplace.git") %}
+{%- set config = toml.merge(config, "marketplaces",
+      toml.merge(marketplaces, "cc-marketplace", marketplace)) %}
+
+{%- set plugins = config.plugins or {} %}
+{%- set plugin = plugins["cc-safety-net@cc-marketplace"] or {} %}
+{%- set plugin = toml.merge(plugin, "enabled", true) %}
+{%- set config = toml.merge(config, "plugins",
+      toml.merge(plugins, "cc-safety-net@cc-marketplace", plugin)) %}
+
+{#- Memories -#}
 {%- set config = toml.merge(config, "features", toml.merge(config.features or {},
       "memories", true)) %}
 {%- set config = toml.merge(config, "features", toml.merge(config.features or {},
@@ -42,6 +57,8 @@
       "generate_memories", true)) %}
 {%- set config = toml.merge(config, "analytics", toml.merge(config.analytics or {},
       "enabled", false)) %}
+
+{#- Product surfaces -#}
 {%- set config = toml.merge(config, "desktop", toml.merge(config.desktop or {},
       "enabled-reasoning-efforts", ["low", "medium", "high", "xhigh", "ultra", "max"])) %}
 {%- set config = toml.merge(config, "desktop", toml.merge(config.desktop or {},

@@ -72,6 +72,8 @@ install() {
     _install_vendor_skills
     _install_claude_code install &&
         _sync_claude_plugins install
+    command -v codex &>/dev/null &&
+        _sync_codex_plugins
 }
 
 # Re-prepare and update runtime components
@@ -83,6 +85,8 @@ upgrade() {
     npx -y skills update -g -y
     _install_claude_code upgrade &&
         _sync_claude_plugins upgrade
+    command -v codex &>/dev/null &&
+        _sync_codex_plugins
 }
 
 # Unstow dotfiles from $HOME and clean up
@@ -260,6 +264,71 @@ _sync_claude_plugins() {
     done < <(jq -r '.enabledPlugins // {} | to_entries[] | "\(.key)\t\(.value)"' "$settings")
 
     return "$rc"
+}
+
+_sync_codex_plugins() {
+    config="$HOME/.codex/config.toml" npx --yes -p smol-toml@^1 node <<'JS'
+        const path = require('path');
+        const fs = require('fs');
+        const { execFileSync, spawn } = require('node:child_process');
+        const { createInterface } = require('node:readline');
+
+        const npxBin = process.env.PATH.split(path.delimiter).find(p => /[\/\\]_npx[\/\\].+[\/\\]node_modules[\/\\]\.bin$/.test(p));
+        const toml = require(require.resolve('smol-toml', { paths: [npxBin.replace(/[\/\\]\.bin$/, '')] }));
+        const run = (...args) => execFileSync('codex', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] });
+        let server;
+
+        (async () => {
+            const config = toml.parse(fs.readFileSync(process.env.config, 'utf8'));
+            const enabled = new Set(Object.entries(config.plugins || {})
+                .filter(([, plugin]) => plugin.enabled).map(([id]) => id));
+
+            run('plugin', 'marketplace', 'upgrade', '--json');
+            const installed = new Set(JSON.parse(run('plugin', 'list', '--json'))
+                .installed.map(plugin => plugin.pluginId));
+            for (const plugin of enabled) {
+                if (installed.has(plugin)) continue;
+                console.log(`[agents] installing Codex plugin ${plugin}`);
+                run('plugin', 'add', plugin, '--json');
+            }
+
+            server = spawn('codex', ['app-server', '--stdio'], { stdio: ['pipe', 'pipe', 'inherit'] });
+            const messages = createInterface({ input: server.stdout })[Symbol.asyncIterator]();
+            const write = message => server.stdin.write(JSON.stringify(message) + '\n');
+            let requestId = 0;
+
+            async function rpc(method, params) {
+                const id = requestId++;
+                write({ method, id, params });
+                for (;;) {
+                    const { value, done } = await messages.next();
+                    if (done) throw new Error('Codex app-server exited');
+                    const message = JSON.parse(value);
+                    if (message.id !== id) continue;
+                    if (message.error) throw new Error(message.error.message);
+                    return message.result;
+                }
+            }
+
+            await rpc('initialize', { clientInfo: { name: 'dotfiles', title: 'dotfiles', version: '1' } });
+            write({ method: 'initialized', params: {} });
+
+            const result = await rpc('hooks/list', { cwds: [process.env.PROFILE_ROOT] });
+            const trust = Object.fromEntries(result.data.flatMap(entry => entry.hooks)
+                .filter(hook => hook.source === 'plugin' && enabled.has(hook.pluginId) &&
+                    hook.trustStatus !== 'trusted')
+                .map(hook => [hook.key, { trusted_hash: hook.currentHash }]));
+
+            if (Object.keys(trust).length) {
+                await rpc('config/batchWrite', {
+                    edits: [{ keyPath: 'hooks.state', value: trust, mergeStrategy: 'upsert' }],
+                    reloadUserConfig: true
+                });
+            }
+
+            server.stdin.end();
+        })().catch(error => { console.error(`[agents] ${error.message}`); server?.kill(); process.exitCode = 1; });
+JS
 }
 
 # Point existing local and Remote SSH VS Code settings at the PATH launcher.
