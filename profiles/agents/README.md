@@ -27,6 +27,7 @@ Endpoint and models are declared once, in a tool-agnostic schema this profile ow
 | `AGENTS_<ALIAS>_MODEL` | Canonical model ID. Declaring one is what registers `<ALIAS>`. A trailing `[1m]` marks a 1M-context deployment. |
 | `AGENTS_<ALIAS>_MODEL_DESCRIPTION` | Display name shown in model pickers. |
 | `AGENTS_<ALIAS>_REASONING_EFFORT` | Default effort for the model: `minimal`, `low`, `medium`, `high`, `xhigh`, or `max`. |
+| `AGENTS_<ALIAS>_MODEL_VISION` | Set to `false` for a model that cannot see. Its Codex prompt then carries a rule to delegate visual inspection to the `vision` sub-agent. |
 | `AGENTS_MODEL_SUPPORTS_EFFORT_SUFFIX` | Set to `true` for gateways that select effort through the model name rather than a request parameter. |
 
 `{% if VAR %}` guards drop the line when a variable is unset, so omitting the `secrets` profile just yields configs pointing at each tool's official endpoint.

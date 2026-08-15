@@ -46,6 +46,22 @@
 {%- if not ["v1", "v2"].includes(multi_agent_version) %}
 {%-   set _ = fail("AGENTS_CODEX_MULTI_AGENT_VERSION must be v1 or v2") %}
 {%- endif %}
+{#- Appended to the prompts of models that cannot see. input_modalities stays
+    image-capable so those models still accept pasted images, and the vision
+    agent's own description carries the spawn protocol. -#}
+{%- set vision_delegation %}
+## Visual input delegation
+
+You do not have visual understanding. Image content may be represented by the
+text `image content omitted because you do not support image input`. Treat that
+text as a signal that the original image is unavailable to you, not as a
+description of the image.
+
+When the answer depends on visual content, delegate its inspection to the
+`vision` agent. Use the vision agent's report as visual evidence and perform
+the final synthesis yourself. If visual delegation is unavailable or fails,
+state that the visual content could not be inspected.
+{% endset %}
 {#- Aliases sharing one model collapse into a single catalog entry (Codex keys
     on slug = the model name sent to the API).
     The first alias in ordered priority wins the default reasoning effort. -#}
@@ -58,6 +74,7 @@
 {%-     set slug = model.slice(0, -4) if long_context else model %}
 {%-     set description = os.environ["AGENTS_" + alias + "_MODEL_DESCRIPTION"] %}
 {%-     set effort = os.environ["AGENTS_" + alias + "_REASONING_EFFORT"] %}
+{%-     set vision = os.environ["AGENTS_" + alias + "_MODEL_VISION"] %}
 {%-     if effort and not efforts.includes(effort) %}
 {%-       set _ = fail("AGENTS_" + alias + "_REASONING_EFFORT must be one of " + efforts.join(", ")) %}
 {%-     endif %}
@@ -75,7 +92,8 @@
 {%-     set collected = json.merge(collected, slug, {
           "long_context": long_context,
           "description": (seen.description if seen else "") or description,
-          "effort": (seen.effort if seen else "") or effort
+          "effort": (seen.effort if seen else "") or effort,
+          "vision": (seen.vision if seen else "") or vision
         }) %}
 {%-   endif %}
 {%- endfor %}
@@ -112,6 +130,12 @@
 {%-   set model = json.merge(model, "additional_speed_tiers", []) %}
 {%-   set model = json.merge(model, "priority", loop.index) %}
 {%-   set model = json.merge(model, "multi_agent_version", multi_agent_version) %}
+{%-   if entry.vision == "false" %}
+{%-     set model = json.merge(model, "base_instructions",
+          model.base_instructions + vision_delegation) %}
+{%-     set model = json.merge(model, "model_messages", json.merge(model.model_messages,
+          "instructions_template", model.model_messages.instructions_template + vision_delegation)) %}
+{%-   endif %}
 {%-   set _ = models.push(model) %}
 {%- endfor -%}
 {{ { "models": models } | dump(2) }}
