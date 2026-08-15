@@ -1,5 +1,4 @@
 dotfiles/.claude/settings.json
-dotfiles/.codex/agents/vision.toml
 dotfiles/.codex/auth.json
 dotfiles/.codex/config.toml
 dotfiles/.codex/models.json

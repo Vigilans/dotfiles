@@ -47,8 +47,10 @@
 {%-   set _ = fail("AGENTS_CODEX_MULTI_AGENT_VERSION must be v1 or v2") %}
 {%- endif %}
 {#- Appended to the prompts of models that cannot see. input_modalities stays
-    image-capable so those models still accept pasted images, and the vision
-    agent's own description carries the spawn protocol. -#}
+    image-capable so those models still accept pasted images. Every model here
+    runs in code mode, where an agent role's own description reaches the model
+    only if it goes looking for it, so the spawn protocol is spelled out in the
+    prompt instead. -#}
 {%- set vision_delegation %}
 ## Visual input delegation
 
@@ -58,9 +60,50 @@ text as a signal that the original image is unavailable to you, not as a
 description of the image.
 
 When the answer depends on visual content, delegate its inspection to the
-`vision` agent. Use the vision agent's report as visual evidence and perform
-the final synthesis yourself. If visual delegation is unavailable or fails,
-state that the visual content could not be inspected.
+`vision` agent. Delegate instead of reconstructing the content yourself: do
+not decode, render, sample, or otherwise analyze the file to substitute for
+visual inspection.
+{% if multi_agent_version == "v1" %}
+Spawn it with `agent_type="vision"` and `fork_context=false`; a full-context
+fork cannot select a different agent type. Pass the exact visual question and
+every source explicitly through `items`:
+
+`agent_type="vision", fork_context=false, items=[{"type":"text",
+"text":"<exact visual question>"},{"type":"local_image",
+"path":"<absolute image path>"}]`
+
+Use a `local_image` item with `path` for a local or pasted image, an `image`
+item with `image_url` for an image URL, and a `text` item for the question and
+the source mapping. If no accessible path or URL is available, ask for the
+image to be reattached or saved to an accessible path.
+
+Wait for the result with `wait_agent` before answering. Ask follow-up
+questions about the same sources with `send_input` on the same agent, calling
+`resume_agent` first if it was closed, and pass a new source through
+`send_input.items`.
+{% else %}
+Spawn it with `agent_type="vision"`, a short descriptive `task_name`, the
+appropriate `fork_turns`, and a `message` holding the exact visual question
+and every relevant source:
+
+`agent_type="vision", task_name="inspect_image", fork_turns="1",
+message="<exact visual question>"`
+
+`task_name` only labels the child thread; naming it `vision` does not select
+the role. Use `fork_turns="1"` for an image attached in the latest turn, the
+smallest positive value that includes the image-bearing turn for an older
+attachment, and `fork_turns="none"` when the source is reachable only through
+a path or URL, naming that exact source in the message. An attachment's
+displayed path does not make it path-only. If the required turn cannot be
+identified, ask for the image to be reattached or for an accessible path.
+
+Reuse the same vision agent for further questions about the same sources:
+steer it with `send_message` while it runs, and start another turn with
+`followup_task` once it is idle.
+{% endif %}
+Use the vision agent's report as visual evidence and perform the final
+synthesis yourself. If visual delegation is unavailable or fails, state that
+the visual content could not be inspected.
 {% endset %}
 {#- Aliases sharing one model collapse into a single catalog entry (Codex keys
     on slug = the model name sent to the API).
