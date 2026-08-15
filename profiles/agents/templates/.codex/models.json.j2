@@ -42,6 +42,10 @@
 {%-     set _ = enabled_models.push(alias.trim().toLowerCase()) %}
 {%-   endif %}
 {%- endfor %}
+{%- set multi_agent_version = AGENTS_CODEX_MULTI_AGENT_VERSION or "v2" %}
+{%- if not ["v1", "v2"].includes(multi_agent_version) %}
+{%-   set _ = fail("AGENTS_CODEX_MULTI_AGENT_VERSION must be v1 or v2") %}
+{%- endif %}
 {#- Aliases sharing one model collapse into a single catalog entry (Codex keys
     on slug = the model name sent to the API).
     The first alias in ordered priority wins the default reasoning effort. -#}
@@ -106,7 +110,7 @@
 {%-   set model = json.merge(model, "service_tiers", []) %}
 {%-   set model = json.merge(model, "additional_speed_tiers", []) %}
 {%-   set model = json.merge(model, "priority", loop.index) %}
-{%-   set model = json.merge(model, "multi_agent_version", "v2") %}
+{%-   set model = json.merge(model, "multi_agent_version", multi_agent_version) %}
 {%-   set _ = models.push(model) %}
 {%- endfor -%}
 {{ { "models": models } | dump(2) }}

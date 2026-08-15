@@ -46,6 +46,10 @@
 {%- set config = toml.merge(config, "plugins",
       toml.merge(plugins, "cc-safety-net@cc-marketplace", plugin)) %}
 
+{#- Multi-agent -#}
+{%- set config = toml.merge(config, "features", toml.merge(config.features or {},
+      "multi_agent_v2", (AGENTS_CODEX_MULTI_AGENT_VERSION or "v2") == "v2")) %}
+
 {#- Memories -#}
 {%- set config = toml.merge(config, "features", toml.merge(config.features or {},
       "memories", true)) %}
