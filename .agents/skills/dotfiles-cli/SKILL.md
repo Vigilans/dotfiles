@@ -38,7 +38,8 @@ Profile management:
 Installation:
   status      Show detailed install status for a profile
   install     Install a profile (prepare + package + resolve conflicts + install)
-  uninstall   Uninstall a profile (unstow from $HOME)
+  package     Run the `package()` phase without stowing
+  uninstall   Uninstall a profile from the configured home
   upgrade     Upgrade an installed profile
 
 Self management:
@@ -52,8 +53,11 @@ Shell integration:
 ## Install flow & conflict resolution
 
 `dotfiles install <profile>` runs four stages: `prepare → package → resolve conflicts → install`.
+The `package()` node here is the profile lifecycle phase; its
+output is the dotfiles stow package selected by `DOTFILES_PACKAGE`.
 
-When existing files in `$HOME` would conflict with stow, `_dotfiles_resolve_conflicts` prompts per file:
+When files in `DOTFILES_HOME` conflict with the selected dotfiles stow package,
+`_dotfiles_resolve_conflicts` prompts per file:
 
 - `[d]iff` — preview with `git diff --no-index` (repeatable, returns to prompt)
 - `[b]ackup` — move HOME file to `$DOTFILES_ROOT/.backups/<profile>-<timestamp>/`
@@ -61,6 +65,40 @@ When existing files in `$HOME` would conflict with stow, `_dotfiles_resolve_conf
 - `[M]erge` (default) — `_dotfiles_resolve_merge` synthesizes a base from common lines (`diff -u | grep '^ '`), runs `git merge-file` to produce conflict markers, opens `$EDITOR` for resolution, writes result to dotfiles dir
 
 After all conflicts are resolved, the profile's `install()` phase runs stow without conflicts.
+
+## Dotfiles stow package and home overrides
+
+The commands accept:
+
+```text
+dotfiles package [--package DIR] [--home DIR] PROFILE
+dotfiles install [--package DIR] [--home DIR] PROFILE...
+dotfiles upgrade [--package DIR] [--home DIR] PROFILE...
+```
+
+Path precedence is CLI option, environment variable, then profile default:
+
+```bash
+DOTFILES_PACKAGE=${DOTFILES_PACKAGE:-$PROFILE_ROOT/dotfiles}
+DOTFILES_HOME=${DOTFILES_HOME:-$HOME}
+```
+
+CLI options are exported as these variables before lifecycle functions run.
+
+`DOTFILES_PACKAGE` names the assembled dotfiles stow package;
+`$PROFILE_ROOT/dotfiles` remains its canonical source. `DOTFILES_HOME` names
+the stow destination.
+
+Running `dotfiles package` with `DOTFILES_PACKAGE` selected through the
+environment or `--package` overlays canonical static files into that external
+dotfiles stow package. It copies files and symlinks recursively, excludes
+`.git`, and does not delete unmanaged destination files. Install and upgrade
+never perform this overlay; an explicitly selected external dotfiles stow
+package must already be assembled.
+
+A selected external dotfiles stow package accepts exactly one profile. Install
+keeps that profile without adding its dependencies. `--home` may be used with
+multiple profiles.
 
 ## Environment loading
 
@@ -83,6 +121,9 @@ Profiles live in two places:
 
 `scripts/templates/profile.sh` contains `__NAME__`, `__DESCRIPTION__`, `__OS__` placeholders. `dotfiles_create_profile` replaces them via `sed` and auto-detects the current OS via `dotfiles_current_os`.
 
+Profile templates may read runtime-managed state from `DOTFILES_HOME` and fall
+back to the dotfiles stow package destination.
+
 ## Adding a new command
 
 1. Add a `dotfiles_<verb>()` function in `dotfiles-lib.sh` with all logic.
@@ -98,10 +139,10 @@ Profiles live in two places:
 - **Naming**: `dotfiles_<verb>` for public functions, `_dotfiles_<name>` for internal helpers.
 - **Profile path resolution**: use `dotfiles_profile_dir <name>` to map a profile name to its directory. It searches `profiles/<name>` then `profiles/local/<name>`. All lib functions that take a profile name use this.
 - **Framework profile detection**: `dotfiles_is_profile_dir <dir>` greps for `name=` and `supported_os=` in `<dir>/profile.sh` to verify it's a framework profile (not e.g. a POSIX `profile.sh` that just sets PATH). Used by bootstrap to decide whether a cloned repo needs wrapping. Detection is grep-based rather than source-based to avoid running unintended remote code.
-- **Profile loading**: use `dotfiles_run_profile <profile> <script>` to source a profile.sh and run a lifecycle function or workflow in a subprocess. This isolates side effects (cd, env changes).
+- **Profile loading**: use `dotfiles_run_profile <profile> <script>` to source a profile.sh and run a lifecycle function or workflow in a subprocess. This isolates side effects (cd, env changes); selected package and home paths are restored from the environment after the profile is sourced.
 - **Metadata reading**: use `dotfiles_load_profile <name>` which sources in a subshell with `set +u` and emits tab-separated fields. Returns non-zero if profile has no `name` variable.
-- **Status checking**: `dotfiles_profile_status <name>` returns one of: `installed`, `not installed`, `partial`, `no dotfiles`. It uses `_dotfiles_check_tree` which recursively walks the dotfiles/ directory and checks whether corresponding $HOME paths are symlinks pointing back to the profile (handling stow's directory folding).
-- **Profile resolution**: `dotfiles_resolve_profiles [profile...]` takes profile names (or discovers all if none given), filters by current OS, auto-includes dependencies, and returns a topologically sorted list. Used by `bootstrap.sh`; caller is responsible for parsing `DOTFILES_PROFILES` from `.env`.
+- **Status checking**: `dotfiles_profile_status <name>` returns one of: `installed`, `not installed`, `partial`, `no dotfiles`. It recursively compares the selected dotfiles stow package with the configured home and handles Stow directory folding.
+- **Profile resolution**: `dotfiles_resolve_profiles [profile...]` takes profile names (or discovers all if none given), filters by current OS, and returns a topologically sorted list. It auto-includes dependencies unless `DOTFILES_SKIP_DEPENDENCIES=1`. Used by `bootstrap.sh`; caller is responsible for parsing `DOTFILES_PROFILES` from `.env`.
 - **Errors**: print to stderr and `return 1`. The CLI translates non-zero returns to appropriate exit codes.
 
 ### CLI

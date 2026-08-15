@@ -4,6 +4,8 @@ export PROFILE_ROOT="$( cd "$( dirname -- "${BASH_SOURCE:-$0}" )" >/dev/null 2>&
 if [ -z "$DOTFILES_ROOT" ]; then
     export DOTFILES_ROOT=$(realpath "$PROFILE_ROOT/../..")
 fi
+export DOTFILES_PACKAGE="${DOTFILES_PACKAGE:-$PROFILE_ROOT/dotfiles}"
+export DOTFILES_HOME="${DOTFILES_HOME:-$HOME}"
 source "$DOTFILES_ROOT/scripts/dotfiles-rc.sh"
 
 # Profile metadata
@@ -24,23 +26,23 @@ package() {
     :
 }
 
-# Stow dotfiles into $HOME and run post-install setup
+# Stow dotfiles into $DOTFILES_HOME and run post-install setup
 install() {
-    stow -v -d "$PROFILE_ROOT" -t "$HOME" dotfiles
+    stow -v -d "$DOTFILES_PACKAGE" -t "$DOTFILES_HOME" .
 }
 
 # Re-prepare and update runtime components
 upgrade() {
     prepare
     package
-    stow -v -d "$PROFILE_ROOT" -t "$HOME" dotfiles
+    stow -v -d "$DOTFILES_PACKAGE" -t "$DOTFILES_HOME" .
 }
 
-# Unstow dotfiles from $HOME and clean up
+# Unstow dotfiles from $DOTFILES_HOME and clean up
 uninstall() {
-    stow -v -D -d "$PROFILE_ROOT" -t "$HOME" dotfiles
+    stow -v -D -d "$DOTFILES_PACKAGE" -t "$DOTFILES_HOME" .
 }
 
 if [ "$0" = "$BASH_SOURCE" ]; then
-    "$@"
+    set -e; "$@"
 fi

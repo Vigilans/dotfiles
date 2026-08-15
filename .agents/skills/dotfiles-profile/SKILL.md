@@ -1,6 +1,6 @@
 ---
 name: dotfiles-profile
-description: Use this skill when creating a new profile under `profiles/`, modifying an existing profile's `profile.sh` lifecycle, adjusting profile metadata (name/description/supported_os/depends/after/before), laying out files under `dotfiles/` for stow, or deciding how a config path should be structured so stow links it cleanly. Also triggers when debugging stow conflicts, understanding directory folding behavior, or deciding whether something should be a standalone profile versus part of an existing one. Prefer `dotfiles create <name>` over manually scaffolding.
+description: Use this skill when creating or modifying profiles under `profiles/`, changing `profile.sh` lifecycle or metadata, laying out files for Stow, selecting custom dotfiles stow package or home roots, debugging Stow conflicts and directory folding, or deciding profile boundaries. Prefer `dotfiles create NAME` over manual scaffolding.
 ---
 
 # Dotfiles profile authoring
@@ -15,7 +15,7 @@ Use the CLI rather than manual scaffolding:
 dotfiles create myapp "One-line description"
 ```
 
-This generates `profiles/myapp/profile.sh` from the template with metadata pre-filled (name, description, current OS). Then populate `profiles/myapp/dotfiles/` with files mirroring their `$HOME` layout.
+This generates `profiles/myapp/profile.sh` from the template with metadata pre-filled (name, description, current OS). Populate the canonical dotfiles stow package source at `profiles/myapp/dotfiles/` with files mirroring the target home layout.
 
 To import existing dotfiles from `$HOME` into a profile:
 
@@ -31,7 +31,7 @@ This moves the file into the profile's `dotfiles/` tree and replaces it with a s
 profiles/{name}/
 ├── profile.sh              # Lifecycle script (executable)
 ├── .env                    # Optional: env vars exported during install
-├── dotfiles/               # Mirrors $HOME — stowed into ~ on install
+├── dotfiles/               # Canonical dotfiles stow package source
 │   └── .config/{app}/...
 ├── build/                  # Downloaded artifacts (gitignored)
 └── .gitignore              # Exclude build outputs, plugin dirs, etc.
@@ -40,6 +40,14 @@ profiles/{name}/
 ## profile.sh lifecycle
 
 ```bash
+export PROFILE_ROOT="$( cd "$( dirname -- "${BASH_SOURCE:-$0}" )" >/dev/null 2>&1 && pwd )"; cd "$PROFILE_ROOT"
+if [ -z "$DOTFILES_ROOT" ]; then
+    export DOTFILES_ROOT=$(realpath "$PROFILE_ROOT/../..")
+fi
+export DOTFILES_PACKAGE="${DOTFILES_PACKAGE:-$PROFILE_ROOT/dotfiles}"
+export DOTFILES_HOME="${DOTFILES_HOME:-$HOME}"
+source "$DOTFILES_ROOT/scripts/dotfiles-rc.sh"
+
 name=myapp
 description="What this profile installs"
 supported_os=(macos)    # auto-filled by `dotfiles create`
@@ -50,44 +58,78 @@ before=()               # order current profile before these during install
 # Install upstream packages/binaries
 prepare() { ... }
 
-# Assemble files in dotfiles/ before stowing (clone plugins, build artifacts)
+# Generate files in the selected dotfiles stow package
 package() { ... }
 
-# Stow dotfiles into $HOME and run post-install setup
+# Stow the selected dotfiles stow package into DOTFILES_HOME
 install() {
-    stow -v -d "$PROFILE_ROOT" -t "$HOME" dotfiles
+    stow -v -d "$DOTFILES_PACKAGE" -t "$DOTFILES_HOME" .
 }
 
 # Re-prepare and update runtime components
 upgrade() { ... }
 
-# Unstow dotfiles from $HOME and clean up
+# Unstow the selected dotfiles stow package
 uninstall() {
-    stow -v -D -d "$PROFILE_ROOT" -t "$HOME" dotfiles
+    stow -v -D -d "$DOTFILES_PACKAGE" -t "$DOTFILES_HOME" .
+}
+
+if [ "$0" = "$BASH_SOURCE" ]; then
+    set -e; "$@"
 }
 ```
 
-The trailing `if [ "$0" = "$BASH_SOURCE" ]; then "$@"; fi` makes phases invokable directly: `./profile.sh prepare`.
+The trailing conditional makes phases directly invokable while enabling
+`errexit` only for direct execution. Framework sourcing does not inherit it.
 
 ### Phase semantics
 
 | Phase | Purpose | Idempotent? |
 |---|---|---|
 | `prepare` | Install system dependencies (brew, apt, pacman) | Yes (package managers handle this) |
-| `package` | Populate `dotfiles/`: build artifacts, clone plugins, render `.j2` templates via `render_templates_<engine>` | Yes (skip if exists) |
-| `install` | CLI resolves stow conflicts first (d/b/k/m prompt), then profile's `stow` + start services | Re-run safe, stow is idempotent || `upgrade` | Rebuild and redeploy dotfiles, update runtime components | Yes |
+| `package` | Generate files in `DOTFILES_PACKAGE`: build artifacts, clone plugins, render `.j2` templates | Yes |
+| `install` | Resolve conflicts, then stow the selected dotfiles stow package and run setup | Yes |
+| `upgrade` | Rebuild and redeploy the selected dotfiles stow package, then update runtime components | Yes |
 | `uninstall` | Stop services + `stow -D` to unlink | Yes |
+
+## Dotfiles stow package paths
+
+`$PROFILE_ROOT/dotfiles` is always the canonical source. `DOTFILES_PACKAGE`
+is the assembled dotfiles stow package used by generation, status, conflict
+resolution, Stow, and unstow. `DOTFILES_HOME` is the Stow destination.
+
+Precedence is CLI option, environment variable, then profile default:
+
+```text
+dotfiles package [--package DIR] [--home DIR] PROFILE
+dotfiles install [--package DIR] [--home DIR] PROFILE...
+dotfiles upgrade [--package DIR] [--home DIR] PROFILE...
+```
+
+When `DOTFILES_PACKAGE` is selected through the environment or `--package`,
+`dotfiles package` overlays canonical static files into that external dotfiles
+stow package. Install and upgrade use it as-is; run `dotfiles package` first
+after static source changes. A selected external dotfiles stow package accepts
+one profile and install does not add its dependencies; `--home` may apply to
+multiple profiles.
+
+The external overlay copies files and symlinks recursively, excludes `.git`,
+and does not delete unmanaged destination files.
+
+Render generated files into `DOTFILES_PACKAGE`. The Codex template reads
+runtime-managed configuration from `DOTFILES_HOME` first and falls back to the
+dotfiles stow package destination.
 
 ## Stow conventions
 
 ### Standard invocation
 
 ```bash
-# Install — package name is "dotfiles", stow dir is profile root
-stow -v -d "$PROFILE_ROOT" -t "$HOME" dotfiles
+# Install the selected dotfiles stow package
+stow -v -d "$DOTFILES_PACKAGE" -t "$DOTFILES_HOME" .
 
 # Uninstall
-stow -v -D -d "$PROFILE_ROOT" -t "$HOME" dotfiles
+stow -v -D -d "$DOTFILES_PACKAGE" -t "$DOTFILES_HOME" .
 
 # Import existing files into profile
 stow --adopt -v -d "$PROFILE_ROOT" -t "$HOME" dotfiles
@@ -97,20 +139,20 @@ stow --adopt -v -d "$PROFILE_ROOT" -t "$HOME" dotfiles
 
 Stow links at the highest directory level it can:
 
-- `~/.config/myapp/` doesn't exist → stow creates one symlink: `~/.config/myapp → <repo>/profiles/myapp/dotfiles/.config/myapp`
-- `~/.config/myapp/` exists as real dir → stow descends and links individual files inside
+- `$DOTFILES_HOME/.config/myapp/` doesn't exist → Stow may fold it into one symlink pointing into `DOTFILES_PACKAGE`.
+- `$DOTFILES_HOME/.config/myapp/` exists as a real directory → Stow descends and links individual files inside.
 
-Folded directories are why new files added inside an already-stowed directory appear in `$HOME` automatically without re-running stow.
+Folded directories are why new files inside an already-stowed directory may appear in `DOTFILES_HOME` without re-running Stow.
 
 ### When to re-stow
 
-- Added a new top-level path in `dotfiles/` → re-stow needed
+- Added a new top-level path in the dotfiles stow package → re-stow needed
 - Added files inside an already-folded directory → no action needed
 - Renamed/moved files → `stow -R` (restow) to clean old links
 
 ### Conflict resolution
 
-When `dotfiles install` detects existing files that would conflict with stow, it prompts per file before the profile's `install()` runs:
+When `dotfiles install` detects files in `DOTFILES_HOME` that conflict with the selected dotfiles stow package, it prompts per file before the profile's `install()` runs:
 
 - `[d]iff` — preview differences with `git diff --no-index` (repeatable)
 - `[b]ackup` — move HOME file to `$DOTFILES_ROOT/.backups/<profile>-<timestamp>/`
@@ -146,5 +188,5 @@ If the cloned external repo isn't already a framework profile (no `name=` and `s
 
 - [profiles/README.md](../../../profiles/README.md) — full reference
 - [profiles/tmux/profile.sh](../../../profiles/tmux/profile.sh) — clean single-app example with TPM plugin management
-- [profiles/yabai/profile.sh](../../../profiles/yabai/profile.sh) — composite profile with services, fonts, and `package` step
+- [profiles/yabai/profile.sh](../../../profiles/yabai/profile.sh) — composite profile with services, fonts, and a `package()` phase
 - [scripts/templates/profile.sh](../../../scripts/templates/profile.sh) — the template used by `dotfiles create`

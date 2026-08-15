@@ -48,13 +48,14 @@ dotfiles_load_profile() {
 
 dotfiles_profile_status() {
     local profile_name="$1"
-    local profile_dir dotfiles_dir
+    local profile_dir
     profile_dir=$(dotfiles_profile_dir "$profile_name") || { echo "no dotfiles"; return; }
-    dotfiles_dir=$(realpath "$profile_dir/dotfiles" 2>/dev/null)
-    [ -d "$dotfiles_dir" ] || { echo "no dotfiles"; return; }
+    local package_dir=$(realpath -m "${DOTFILES_PACKAGE:-$profile_dir/dotfiles}")
+    local home_dir=$(realpath -m "${DOTFILES_HOME:-$HOME}")
+    [ -d "$package_dir" ] || { echo "no dotfiles"; return; }
 
     local _found=0 _missing=0
-    _dotfiles_check_tree "$dotfiles_dir" "$HOME" "$dotfiles_dir"
+    _dotfiles_check_tree "$package_dir" "$home_dir" "$package_dir"
 
     if [ "$_found" -eq 0 ] && [ "$_missing" -eq 0 ]; then
         echo "empty"
@@ -79,7 +80,7 @@ _dotfiles_check_tree() {
 
         if [ -L "$target" ]; then
             local resolved=$(realpath "$target" 2>/dev/null)
-            if [[ "$resolved" == "$root"* ]]; then
+            if [[ "$resolved" == "$root" || "$resolved" == "$root/"* ]]; then
                 _found=$((_found + 1))
             else
                 _missing=$((_missing + 1))
@@ -100,8 +101,8 @@ dotfiles_status_detail() {
 
     [ -f "$profile_dir/profile.sh" ] || { echo "Profile '$profile_name' not found" >&2; return 1; }
 
-    local dotfiles_dir
-    dotfiles_dir=$(realpath "$profile_dir/dotfiles" 2>/dev/null) || true
+    local package_dir=$(realpath -m "${DOTFILES_PACKAGE:-$profile_dir/dotfiles}")
+    local home_dir=$(realpath -m "${DOTFILES_HOME:-$HOME}")
 
     local metadata
     metadata=$(dotfiles_load_profile "$profile_name") || true
@@ -121,12 +122,12 @@ dotfiles_status_detail() {
     [ -n "$p_deps" ] && echo "  Depends: $p_deps"
     echo ""
 
-    if [ ! -d "$dotfiles_dir" ]; then
-        echo "  No dotfiles/ directory"
+    if [ ! -d "$package_dir" ]; then
+        echo "  No dotfiles package directory"
         return
     fi
 
-    _dotfiles_status_tree "$dotfiles_dir" "$HOME" "$dotfiles_dir" ""
+    _dotfiles_status_tree "$package_dir" "$home_dir" "$package_dir" ""
 }
 
 _dotfiles_status_tree() {
@@ -142,7 +143,7 @@ _dotfiles_status_tree() {
 
         if [ -L "$target" ]; then
             local resolved=$(realpath "$target" 2>/dev/null)
-            if [[ "$resolved" == "$root"* ]]; then
+            if [[ "$resolved" == "$root" || "$resolved" == "$root/"* ]]; then
                 echo "  ✓ $rel_path"
             else
                 echo "  ✗ $rel_path  (symlink → $resolved)"
@@ -204,10 +205,12 @@ dotfiles_resolve_profiles() {
         _in_set="$_in_set $p"
         install_set+=("$p")
 
-        local dep
-        for dep in $deps; do
-            _resolve_profiles "$dep" || return 1
-        done
+        if [ "${DOTFILES_SKIP_DEPENDENCIES:-0}" -ne 1 ]; then
+            local dep
+            for dep in $deps; do
+                _resolve_profiles "$dep" || return 1
+            done
+        fi
     }
 
     local profile
@@ -336,8 +339,14 @@ dotfiles_run_profile() {
 
     [ -f "$profile_dir/profile.sh" ] || { echo "Profile '$profile_name' not found" >&2; return 1; }
 
+    local package_dir=$(realpath -m "${DOTFILES_PACKAGE:-$profile_dir/dotfiles}")
+    local home_dir=$(realpath -m "${DOTFILES_HOME:-$HOME}")
+
     profile_dir="$profile_dir" profile_name="$profile_name" \
-        bash -c 'set -e; source "$profile_dir/profile.sh"; '"$script"
+        package_dir="$package_dir" home_dir="$home_dir" \
+        bash -c 'set -e; source "$profile_dir/profile.sh"
+        export DOTFILES_PACKAGE="$package_dir" DOTFILES_HOME="$home_dir"
+        '"$script"
 }
 
 dotfiles_uninstall() {
@@ -371,8 +380,8 @@ _dotfiles_ensure_stow() {
 }
 
 _dotfiles_stow_conflicts() {
-    local profile_dir="$1"
-    stow -n -v -d "$profile_dir" -t "$HOME" dotfiles 2>&1 \
+    local package_dir="$1" home_dir="$2"
+    stow -n -v -d "$package_dir" -t "$home_dir" . 2>&1 \
         | grep 'existing target' \
         | sed -E 's/.*existing target ([^:]*: )?//' \
         | sed 's/ since .*//'
@@ -395,12 +404,9 @@ _dotfiles_resolve_merge() {
 
 _dotfiles_resolve_conflicts() {
     local profile_name="$1"
-    local profile_dir
-    profile_dir=$(dotfiles_profile_dir "$profile_name") || return 0
-    local dotfiles_dir="$profile_dir/dotfiles"
 
     local conflicts
-    conflicts=$(_dotfiles_stow_conflicts "$profile_dir" || true)
+    conflicts=$(_dotfiles_stow_conflicts "$DOTFILES_PACKAGE" "$DOTFILES_HOME" || true)
     [ -z "$conflicts" ] && return 0
 
     local backup_dir="$DOTFILES_ROOT/.backups/${profile_name}-$(date +%Y%m%d-%H%M%S)"
@@ -409,11 +415,11 @@ _dotfiles_resolve_conflicts() {
     local rel_path
     while IFS= read -r rel_path; do
         [ -z "$rel_path" ] && continue
-        local home_file="$HOME/$rel_path"
-        local dotfiles_file="$dotfiles_dir/$rel_path"
+        local home_file="$DOTFILES_HOME/$rel_path"
+        local dotfiles_file="$DOTFILES_PACKAGE/$rel_path"
 
         echo ""
-        echo "CONFLICT: ~/$rel_path"
+        echo "CONFLICT: $DOTFILES_HOME/$rel_path"
 
         local choice
         while true; do
@@ -489,6 +495,12 @@ dotfiles_package() {
     profile_dir=$(dotfiles_profile_dir "$profile_name") || { echo "Profile '$profile_name' not found" >&2; return 1; }
 
     [ -f "$profile_dir/profile.sh" ] || { echo "Profile '$profile_name' not found" >&2; return 1; }
+
+    # Copy the canonical dotfiles stow package into the explicit destination, excluding Git metadata.
+    if [ -n "${DOTFILES_PACKAGE:-}" ] && [ "$(realpath -m "$DOTFILES_PACKAGE")" != "$(realpath -m "$profile_dir/dotfiles")" ]; then
+        mkdir -p "$DOTFILES_PACKAGE"
+        (cd "$profile_dir/dotfiles" && find . -name .git -prune -o \( -type f -o -type l \) -exec cp -Pp --parents -t "$DOTFILES_PACKAGE" {} +) || return 1
+    fi
 
     echo "[$profile_name] package"
     dotfiles_run_profile "$profile_name" package

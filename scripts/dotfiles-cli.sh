@@ -40,7 +40,28 @@ cmd_remove() {
 }
 
 cmd_install() {
-    [ -z "${1:-}" ] && { echo "Usage: dotfiles install <profile>... | *" >&2; exit 2; }
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --package)
+                [ $# -ge 2 ] || { echo "Usage: dotfiles install [--package DIR] [--home DIR] <profile>... | *" >&2; exit 2; }
+                export DOTFILES_PACKAGE="$2"; shift 2
+                ;;
+            --home)
+                [ $# -ge 2 ] || { echo "Usage: dotfiles install [--package DIR] [--home DIR] <profile>... | *" >&2; exit 2; }
+                export DOTFILES_HOME="$2"; shift 2
+                ;;
+            --) shift; break ;;
+            -*) echo "Unknown option: $1" >&2; exit 2 ;;
+            *) break ;;
+        esac
+    done
+    [ -z "${1:-}" ] && { echo "Usage: dotfiles install [--package DIR] [--home DIR] <profile>... | *" >&2; exit 2; }
+    if [ -n "${DOTFILES_PACKAGE:-}" ] && { [ $# -ne 1 ] || [ "$1" = "*" ]; }; then
+        echo "--package requires exactly one profile" >&2
+        exit 2
+    fi
+
+    [ -z "${DOTFILES_PACKAGE:-}" ] || export DOTFILES_SKIP_DEPENDENCIES=1
     local sorted
     if [ $# -eq 1 ] && [ "$1" = "*" ]; then
         # "*" means all profiles compatible with the current OS
@@ -62,7 +83,27 @@ cmd_install() {
 }
 
 cmd_package() {
-    [ -z "${1:-}" ] && { echo "Usage: dotfiles package <profile>..." >&2; exit 2; }
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --package)
+                [ $# -ge 2 ] || { echo "Usage: dotfiles package [--package DIR] [--home DIR] <profile>..." >&2; exit 2; }
+                export DOTFILES_PACKAGE="$2"; shift 2
+                ;;
+            --home)
+                [ $# -ge 2 ] || { echo "Usage: dotfiles package [--package DIR] [--home DIR] <profile>..." >&2; exit 2; }
+                export DOTFILES_HOME="$2"; shift 2
+                ;;
+            --) shift; break ;;
+            -*) echo "Unknown option: $1" >&2; exit 2 ;;
+            *) break ;;
+        esac
+    done
+    [ -z "${1:-}" ] && { echo "Usage: dotfiles package [--package DIR] [--home DIR] <profile>..." >&2; exit 2; }
+    if [ -n "${DOTFILES_PACKAGE:-}" ] && { [ $# -ne 1 ] || [ "$1" = "*" ]; }; then
+        echo "--package requires exactly one profile" >&2
+        exit 2
+    fi
+
     for profile in "$@"; do
         dotfiles_package "$profile"
     done
@@ -76,7 +117,27 @@ cmd_uninstall() {
 }
 
 cmd_upgrade() {
-    [ -z "${1:-}" ] && { echo "Usage: dotfiles upgrade <profile>..." >&2; exit 2; }
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --package)
+                [ $# -ge 2 ] || { echo "Usage: dotfiles upgrade [--package DIR] [--home DIR] <profile>..." >&2; exit 2; }
+                export DOTFILES_PACKAGE="$2"; shift 2
+                ;;
+            --home)
+                [ $# -ge 2 ] || { echo "Usage: dotfiles upgrade [--package DIR] [--home DIR] <profile>..." >&2; exit 2; }
+                export DOTFILES_HOME="$2"; shift 2
+                ;;
+            --) shift; break ;;
+            -*) echo "Unknown option: $1" >&2; exit 2 ;;
+            *) break ;;
+        esac
+    done
+    [ -z "${1:-}" ] && { echo "Usage: dotfiles upgrade [--package DIR] [--home DIR] <profile>..." >&2; exit 2; }
+    if [ -n "${DOTFILES_PACKAGE:-}" ] && { [ $# -ne 1 ] || [ "$1" = "*" ]; }; then
+        echo "--package requires exactly one profile" >&2
+        exit 2
+    fi
+
     for profile in "$@"; do
         dotfiles_upgrade "$profile"
     done
@@ -142,10 +203,10 @@ case "${1:-}" in
         echo ""
         echo "Installation:"
         echo "  status      Show detailed install status for a profile"
-        echo "  install     Install a profile (prepare + package + stow)"
-        echo "  package     Regenerate a profile's dotfiles (package phase only)"
-        echo "  uninstall   Uninstall a profile (unstow from \$HOME)"
-        echo "  upgrade     Upgrade an installed profile"
+        echo "  install     Install a profile (--package DIR --home DIR)"
+        echo "  package     Render a profile; --package overlays static files without stowing"
+        echo "  uninstall   Uninstall a profile (unstow from \$DOTFILES_HOME)"
+        echo "  upgrade     Upgrade an installed profile (--package DIR --home DIR)"
         echo ""
         echo "Self management:"
         echo "  self update Pull latest dotfiles repository"

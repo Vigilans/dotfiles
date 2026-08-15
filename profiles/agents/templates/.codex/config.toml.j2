@@ -2,7 +2,7 @@
     plugin state, trusted projects), so patch the owned keys into the existing
     document and write the whole thing back instead of templating a fresh file.
     Tables are merged rather than replaced, for the same reason. -#}
-{%- set config = toml.parse(fs.readFile(dst + "/.codex/config.toml") or "") %}
+{%- set config = toml.parse(fs.readFile(DOTFILES_HOME + "/.codex/config.toml") or fs.readFile(dst + "/.codex/config.toml") or "") %}
 
 {#- Endpoint -#}
 {%- set provider = AGENTS_MODEL_PROVIDER or "custom" %}

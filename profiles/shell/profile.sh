@@ -4,6 +4,8 @@ export PROFILE_ROOT="$( cd "$( dirname -- "${BASH_SOURCE:-$0}" )" >/dev/null 2>&
 if [ -z "$DOTFILES_ROOT" ]; then
     export DOTFILES_ROOT=$(realpath "$PROFILE_ROOT/../..")
 fi
+export DOTFILES_PACKAGE="${DOTFILES_PACKAGE:-$PROFILE_ROOT/dotfiles}"
+export DOTFILES_HOME="${DOTFILES_HOME:-$HOME}"
 source "$DOTFILES_ROOT/scripts/dotfiles-rc.sh"
 
 name=shell
@@ -25,7 +27,7 @@ package() {
 }
 
 install() {
-    stow -v -d "$PROFILE_ROOT" -t "$HOME" dotfiles
+    stow -v -d "$DOTFILES_PACKAGE" -t "$DOTFILES_HOME" .
     mkdir -p ~/.config/shell/commands/local ~/.config/shell/profiles/local
     bash "$BOOTSTRAP" install
 }
@@ -36,11 +38,11 @@ upgrade() {
 }
 
 uninstall() {
-    stow -v -D -d "$PROFILE_ROOT" -t "$HOME" dotfiles
+    stow -v -D -d "$DOTFILES_PACKAGE" -t "$DOTFILES_HOME" .
     # Leave $HOME/.zshrc etc. alone — they are user copies that may carry
     # installer/local edits. Remove manually if a full purge is wanted.
 }
 
 if [ "$0" = "$BASH_SOURCE" ]; then
-    "$@"
+    set -e; "$@"
 fi

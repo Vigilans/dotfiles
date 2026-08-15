@@ -33,8 +33,8 @@ before=()               # order current profile before these during install
 
 ```bash
 prepare()   { ... }   # Install upstream packages (brew, apt, pacman)
-package()   { ... }   # Assemble files in dotfiles/ from build/ artifacts before stowing
-install()   { ... }   # `stow -v -d "$PROFILE_ROOT" -t "$HOME" dotfiles` + post-install setup
+package()   { ... }   # Assemble generated files in $DOTFILES_PACKAGE before stowing
+install()   { ... }   # Stow $DOTFILES_PACKAGE into $DOTFILES_HOME + post-install setup
 upgrade()   { ... }   # Re-prepare + update plugins + reload configs
 uninstall() { ... }   # Stop services + `stow -v -D ...`
 ```
@@ -46,6 +46,30 @@ uninstall() { ... }   # Stop services + `stow -v -D ...`
 | `install` | CLI resolves stow conflicts (d/b/k/m prompt), then profile's `stow` + start services | Re-run safe |
 | `upgrade` | Re-prepare + update plugins + reload configs | Yes |
 | `uninstall` | Stop services + `stow -D` | Yes |
+
+Every profile defines two overridable paths after `PROFILE_ROOT`:
+
+```bash
+export DOTFILES_PACKAGE="${DOTFILES_PACKAGE:-$PROFILE_ROOT/dotfiles}"
+export DOTFILES_HOME="${DOTFILES_HOME:-$HOME}"
+```
+
+`DOTFILES_PACKAGE` is the assembled stow package; `$PROFILE_ROOT/dotfiles`
+remains its canonical source. `DOTFILES_HOME` is the stow destination. CLI
+flags override environment values, which override these defaults.
+
+An explicit package path is limited to one profile:
+
+```bash
+dotfiles package --package /path/to/package --home /path/to/home profile
+dotfiles install --package /path/to/package --home /path/to/home profile
+dotfiles upgrade --package /path/to/package --home /path/to/home profile
+```
+
+When `DOTFILES_PACKAGE` is selected through the environment or `--package`, the
+`package` command copies canonical files and symlinks there, excluding `.git`,
+before running the profile's `package()` phase. Install and upgrade use the
+selected dotfiles stow package as-is; install does not add profile dependencies.
 
 ## Coordination between profiles
 
@@ -89,14 +113,15 @@ Engines are loaded ephemerally — no committed `package.json`, `node_modules`, 
 Standard invocations:
 
 ```bash
-stow -v -d "$PROFILE_ROOT" -t "$HOME" dotfiles      # install
-stow -v -D -d "$PROFILE_ROOT" -t "$HOME" dotfiles    # uninstall
+stow -v -d "$DOTFILES_PACKAGE" -t "$DOTFILES_HOME" .
+stow -v -D -d "$DOTFILES_PACKAGE" -t "$DOTFILES_HOME" .
 stow --adopt -v -d "$PROFILE_ROOT" -t "$HOME" dotfiles  # import
 ```
 
 Edits to files inside an already-stowed directory show up in `$HOME` automatically (stow folds at the directory level). Adding a new top-level path requires re-stow.
 
-`dotfiles install` resolves conflicts with `$HOME` before the profile's `install()` runs:
+`dotfiles install` resolves conflicts between `$DOTFILES_PACKAGE` and
+`$DOTFILES_HOME` before the profile's `install()` runs:
 
 - `[d]iff` — preview differences with `git diff --no-index` (repeatable)
 - `[b]ackup` — move HOME file to `$DOTFILES_ROOT/.backups/<profile>-<timestamp>/`

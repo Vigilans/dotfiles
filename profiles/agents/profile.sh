@@ -4,6 +4,8 @@ export PROFILE_ROOT="$( cd "$( dirname -- "${BASH_SOURCE:-$0}" )" >/dev/null 2>&
 if [ -z "$DOTFILES_ROOT" ]; then
     export DOTFILES_ROOT=$(realpath "$PROFILE_ROOT/../..")
 fi
+export DOTFILES_PACKAGE="${DOTFILES_PACKAGE:-$PROFILE_ROOT/dotfiles}"
+export DOTFILES_HOME="${DOTFILES_HOME:-$HOME}"
 source "$DOTFILES_ROOT/scripts/dotfiles-rc.sh"
 
 # Profile metadata
@@ -58,17 +60,17 @@ package() {
         }
     fi
 
-    render_templates_nunjucks "$PROFILE_ROOT/templates" "$PROFILE_ROOT/dotfiles"
+    render_templates_nunjucks "$PROFILE_ROOT/templates" "$DOTFILES_PACKAGE"
 }
 
-# Stow dotfiles into $HOME and run post-install setup
+# Stow dotfiles into $DOTFILES_HOME and run post-install setup
 install() {
     # Skills link runs first so $HOME/.agents/skills and each target's parent
     # exist as real dirs before stow — otherwise stow would fold those paths
     # into symlinks pointing at the repo, redirecting npx skills' real-dir
     # writes and Claude Code's runtime state into the dotfiles tree.
     _install_skills_link "$HOME/.agents/skills" "$HOME/.claude/skills" "$HOME/.config/opencode/skills"
-    stow -v -d "$PROFILE_ROOT" -t "$HOME" dotfiles
+    stow -v -d "$DOTFILES_PACKAGE" -t "$DOTFILES_HOME" .
     _install_vendor_skills
     _install_claude_code install &&
         _sync_claude_plugins install
@@ -80,7 +82,7 @@ install() {
 upgrade() {
     prepare
     package
-    stow -v -d "$PROFILE_ROOT" -t "$HOME" dotfiles || return 1
+    stow -v -d "$DOTFILES_PACKAGE" -t "$DOTFILES_HOME" . || return 1
     _install_vendor_skills
     npx -y skills update -g -y
     _install_claude_code upgrade &&
@@ -89,9 +91,9 @@ upgrade() {
         _sync_codex_plugins
 }
 
-# Unstow dotfiles from $HOME and clean up
+# Unstow dotfiles from $DOTFILES_HOME and clean up
 uninstall() {
-    stow -v -D -d "$PROFILE_ROOT" -t "$HOME" dotfiles
+    stow -v -D -d "$DOTFILES_PACKAGE" -t "$DOTFILES_HOME" .
 }
 
 # Symlink each agent's skills dir to the shared ~/.agents/skills, so all agents
@@ -383,6 +385,5 @@ JS
 }
 
 if [ "$0" = "$BASH_SOURCE" ]; then
-    set -e
-    "$@"
+    set -e; "$@"
 fi

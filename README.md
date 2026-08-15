@@ -31,9 +31,13 @@ dotfiles remove <name>               Remove a profile from the repository
 dotfiles import <name> <path>...     Import existing dotfiles (stow --adopt)
 
 dotfiles status <name>...            Show detailed install status
-dotfiles install <name>...           prepare + package + stow
-dotfiles uninstall <name>...         Unstow from $HOME
-dotfiles upgrade <name>...           Upgrade an installed profile
+dotfiles install [--package DIR] [--home DIR] <name>...
+                                      prepare + package + stow
+dotfiles package [--package DIR] [--home DIR] <name>...
+                                      Build a package without stowing it
+dotfiles uninstall <name>...         Unstow from the configured home
+dotfiles upgrade [--package DIR] [--home DIR] <name>...
+                                      Upgrade an installed profile
 
 dotfiles self update                 Pull latest dotfiles repository
 dotfiles self version                Show framework commit SHA, message, and age
@@ -57,10 +61,16 @@ profiles/<name>/
 | Phase       | Purpose                                                  |
 |-------------|----------------------------------------------------------|
 | `prepare`   | Install upstream packages (brew/apt/pacman/…)            |
-| `package`   | Assemble files in `dotfiles/` from `build/` artifacts    |
-| `install`   | `stow -d "$PROFILE_ROOT" -t "$HOME" dotfiles`            |
+| `package`   | Assemble files in `$DOTFILES_PACKAGE` from source/build artifacts |
+| `install`   | Stow `$DOTFILES_PACKAGE` into `$DOTFILES_HOME`           |
 | `upgrade`   | Re-run prepare, update plugins, reload configs           |
 | `uninstall` | Stop services, then `stow -D ...`                        |
+
+When `DOTFILES_PACKAGE` is set directly or through `--package DIR`, `package`
+copies one profile's static files and symlinks there, excluding `.git`, then
+renders generated files without running stow. Install and upgrade treat the
+selected dotfiles stow package as already assembled. `--home DIR` selects the
+stow destination.
 
 Each phase is invokable directly: `./profiles/<name>/profile.sh prepare`.
 
