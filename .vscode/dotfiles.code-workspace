@@ -5,8 +5,20 @@
             "path": ".."
         },
         {
+            "name": "profiles/shell",
+            "path": "../profiles/shell"
+        },
+        {
+            "name": "profiles/agents",
+            "path": "../profiles/agents"
+        },
+        {
             "name": "shell",
             "path": "../profiles/shell/dotfiles/.config/shell"
+        },
+        {
+            "name": "agents",
+            "path": "../profiles/agents/dotfiles/.local/share/agents"
         },
     ],
     "settings": {
