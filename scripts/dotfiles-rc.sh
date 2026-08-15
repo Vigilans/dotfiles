@@ -6,6 +6,11 @@ fi
 # NOT exported, so each profile invocation gets a fresh read of all .env files
 # from disk. A full install keeps its phases in that same shell.
 if [ -z "${DOTFILES_RC_LOADED:-}" ]; then
+    # Values already in the environment win over the .env channel, so a one-off
+    # `VAR=value dotfiles ...` overrides a published one. PATH is exempt:
+    # profile .env files extend it for downstream phases.
+    _dotfiles_caller_env=$(export -p)
+
     # Load bootstrap .env (user's main config, gitignored)
     set -a
     [ -f "$DOTFILES_ROOT/.env" ] && source "$DOTFILES_ROOT/.env"
@@ -17,6 +22,11 @@ if [ -z "${DOTFILES_RC_LOADED:-}" ]; then
         [ -f "$f" ] && source "$f"
     done
     set +a
+
+    _dotfiles_env_path="$PATH"
+    eval "$_dotfiles_caller_env"
+    export PATH="$_dotfiles_env_path"
+    unset _dotfiles_caller_env _dotfiles_env_path
 
     # Load helper library
     source "$DOTFILES_ROOT/scripts/dotfiles-lib.sh"

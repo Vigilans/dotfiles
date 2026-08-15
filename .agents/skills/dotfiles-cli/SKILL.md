@@ -105,7 +105,8 @@ multiple profiles.
 `dotfiles-rc.sh` is the single loader, guarded by `DOTFILES_RC_LOADED`:
 1. Sets `DOTFILES_ROOT` if not already set
 2. Sources `.env` with `set -a` (skips if `.env` doesn't exist — repo ships `.env.example`)
-3. Sources `dotfiles-lib.sh`
+3. Restores the caller's exported values over the channel, keeping the `PATH` that `.env` composed
+4. Sources `dotfiles-lib.sh`
 
 All profiles also source this file, so lib functions are always available inside lifecycle functions.
 
