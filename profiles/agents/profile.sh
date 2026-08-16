@@ -70,6 +70,7 @@ install() {
     # into symlinks pointing at the repo, redirecting npx skills' real-dir
     # writes and Claude Code's runtime state into the dotfiles tree.
     _install_skills_link "$HOME/.agents/skills" "$HOME/.claude/skills" "$HOME/.config/opencode/skills"
+    mkdir -p "$DOTFILES_HOME/.codex"
     stow -v -d "$DOTFILES_PACKAGE" -t "$DOTFILES_HOME" .
     _install_vendor_skills
     _install_claude_code install &&
