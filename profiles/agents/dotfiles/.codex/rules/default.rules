@@ -30,11 +30,6 @@ prefix_rule(pattern = ["gh", "api"], decision = "allow")
 prefix_rule(pattern = ["npm", "run"], decision = "allow")
 prefix_rule(pattern = ["playwright-cli", "click"], decision = "allow")
 
-# rm is allowed here, and a more sophisticated check is delegated to safety-net plugin
-prefix_rule(pattern = ["rm"], decision = "allow")
-prefix_rule(pattern = ["Remove-Item"], decision = "allow")
-prefix_rule(pattern = [["powershell", "pwsh"]], decision = "allow")  # Workaround for Remove-Item on Windows: https://github.com/openai/codex/issues/23484
-
 # --- deny ---
 
 prefix_rule(

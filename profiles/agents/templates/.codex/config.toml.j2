@@ -30,6 +30,7 @@
 {#- Permissions -#}
 {%- set config = toml.merge(config, "sandbox_mode", "danger-full-access") %}
 {%- set config = toml.merge(config, "approval_policy", "on-request") %}
+{%- set config = toml.merge(config, "approvals_reviewer", "auto_review") %}
 
 {#- Plugins -#}
 {%- set marketplaces = config.marketplaces or {} %}
