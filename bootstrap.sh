@@ -30,6 +30,7 @@ fi
 if [ -n "${DOTFILES_EXTRA_PROFILES:-}" ]; then
     IFS=',' read -ra _extras <<< "${DOTFILES_EXTRA_PROFILES//[[:space:]]/}"
     _extra_names=()
+    _exclude="$(git rev-parse --git-dir)/info/exclude"
     for entry in "${_extras[@]}"; do
         IFS='=' read -r _name _url <<< "$entry"
         _extra_names+=("$_name")
@@ -51,6 +52,10 @@ if [ -n "${DOTFILES_EXTRA_PROFILES:-}" ]; then
                 dotfiles_create_profile "$_name" "External profile (auto-generated)"
             fi
         fi
+        # Keep external profiles out of the superproject index. The exclude is
+        # local, so a private profile's name never reaches a tracked file.
+        grep -qxF "profiles/$_name/" "$_exclude" 2>/dev/null ||
+            echo "profiles/$_name/" >> "$_exclude"
     done
     # When DOTFILES_PROFILES="*", leave it alone — cloned externals will be
     # picked up by dotfiles_discover_profiles.

@@ -22,7 +22,7 @@ scripts/
 ```
 
 `bootstrap.sh` at the repo root:
-1. Parses `DOTFILES_EXTRA_PROFILES` (whitespace-tolerant `name=url` pairs) and clones each into `profiles/<name>/`. If the cloned repo isn't a framework profile (verified by `dotfiles_is_profile_dir` grep on `name=` and `supported_os=`), its contents are wrapped under `dotfiles/` and a `profile.sh` is generated from the standard template via `dotfiles_create_profile`. Detection uses grep, not source — remote code only runs at install phase.
+1. Parses `DOTFILES_EXTRA_PROFILES` (whitespace-tolerant `name=url` pairs) and clones each into `profiles/<name>/`. If the cloned repo isn't a framework profile (verified by `dotfiles_is_profile_dir` grep on `name=` and `supported_os=`), its contents are wrapped under `dotfiles/` and a `profile.sh` is generated from the standard template via `dotfiles_create_profile`. Detection uses grep, not source — remote code only runs at install phase. Each external profile is recorded in the local `.git/info/exclude`, so it stays out of the superproject's index and its name out of tracked files.
 2. Appends extra profile names to `DOTFILES_PROFILES`, resolves dependencies and OS filtering via `dotfiles_resolve_profiles`, installs each profile in dependency order.
 3. Symlinks the CLI to `~/.local/bin/dotfiles`.
 
