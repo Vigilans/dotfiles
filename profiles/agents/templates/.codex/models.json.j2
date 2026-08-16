@@ -160,6 +160,7 @@ the visual content could not be inspected.
 {%-   set model = json.merge(model, "supported_reasoning_levels", reasoning_levels) %}
 {%-   set model = json.merge(model, "context_window", context_window) %}
 {%-   set model = json.merge(model, "max_context_window", context_window) %}
+{%-   set model = json.merge(model, "effective_context_window_percent", 100) %}
 {%-   set model = json.merge(model, "auto_compact_token_limit", auto_compact_token_limit) %}
 {%-   set model = json.merge(model, "visibility", "list") %}
 {%-   set model = json.merge(model, "supported_in_api", true) %}
