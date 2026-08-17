@@ -1,0 +1,8 @@
+{%- set policy = json.parse(fs.readFile(DOTFILES_HOME + "/.cc-safety-net/policy.json") or fs.readFile(dst + "/.cc-safety-net/policy.json") or "{\"version\":1}") %}
+{%- set secret_protection = policy.secret_protection or {} %}
+{%- set overrides = secret_protection.overrides or {} %}
+{%- set overrides = json.merge(overrides, "secret.basename.env", "off") %}
+{%- set overrides = json.merge(overrides, "secret.pattern.env-variant", "off") %}
+{%- set secret_protection = json.merge(secret_protection, "overrides", overrides) %}
+{%- set policy = json.merge(policy, "secret_protection", secret_protection) %}
+{{- policy | dump(2) }}

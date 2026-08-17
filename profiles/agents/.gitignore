@@ -1,3 +1,4 @@
+dotfiles/.cc-safety-net/policy.json
 dotfiles/.claude/settings.json
 dotfiles/.codex/auth.json
 dotfiles/.codex/config.toml
