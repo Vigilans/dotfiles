@@ -172,6 +172,7 @@ the visual content could not be inspected.
       server-executed tools, so Codex drops web_search and image_generation
       entirely. Third-party models need the standard Responses shape. -#}
 {%-   set model = json.merge(model, "use_responses_lite", false) %}
+{%-   set model = json.merge(model, "supports_parallel_tool_calls", true) %}
 {%-   set model = json.merge(model, "supports_image_detail_original", false) %}
 {%-   set model = json.merge(model, "service_tiers", []) %}
 {%-   set model = json.merge(model, "additional_speed_tiers", []) %}
