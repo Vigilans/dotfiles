@@ -22,26 +22,29 @@
 {%- for level in reasoning_levels %}
 {%-   set _ = efforts.push(level.effort) %}
 {%- endfor %}
-{#- Codex leads with the GPT aliases: with no `model` in config.toml the first
-    picker-visible entry becomes the default on a fresh install. -#}
-{%- set ordered = ["GPT", "GPT_SOL", "GPT_TERRA", "GPT_LUNA", "FABLE", "OPUS", "SONNET", "HAIKU"] %}
-{%- set aliases = [] %}
-{%- for key, val in os.environ %}
-{%-   if key.startsWith("AGENTS_") and key.endsWith("_MODEL") %}
-{%-     set _ = aliases.push(key.slice(7, -6)) %}
-{%-   endif %}
-{%- endfor %}
-{%- for alias in aliases | sort %}
-{%-   if not ordered.includes(alias) %}
-{%-     set _ = ordered.push(alias) %}
-{%-   endif %}
-{%- endfor %}
-{%- set enabled_models = [] %}
+{#- AGENTS_CODEX_ENABLED_MODELS defines both selection and order. Without it,
+    Codex leads with the GPT aliases so the first picker-visible entry becomes
+    the default on a fresh install. -#}
+{%- set ordered = [] %}
 {%- for alias in (AGENTS_CODEX_ENABLED_MODELS or "").split(",") %}
 {%-   if alias.trim() %}
-{%-     set _ = enabled_models.push(alias.trim().toLowerCase()) %}
+{%-     set _ = ordered.push(alias.trim().toUpperCase()) %}
 {%-   endif %}
 {%- endfor %}
+{%- if not ordered.length %}
+{%-   set ordered = ["GPT", "GPT_SOL", "GPT_TERRA", "GPT_LUNA", "FABLE", "OPUS", "SONNET", "HAIKU"] %}
+{%-   set aliases = [] %}
+{%-   for key, val in os.environ %}
+{%-     if key.startsWith("AGENTS_") and key.endsWith("_MODEL") %}
+{%-       set _ = aliases.push(key.slice(7, -6)) %}
+{%-     endif %}
+{%-   endfor %}
+{%-   for alias in aliases | sort %}
+{%-     if not ordered.includes(alias) %}
+{%-       set _ = ordered.push(alias) %}
+{%-     endif %}
+{%-   endfor %}
+{%- endif %}
 {%- set multi_agent_version = AGENTS_CODEX_MULTI_AGENT_VERSION or "v2" %}
 {%- if not ["v1", "v2"].includes(multi_agent_version) %}
 {%-   set _ = fail("AGENTS_CODEX_MULTI_AGENT_VERSION must be v1 or v2") %}
@@ -112,7 +115,7 @@ the visual content could not be inspected.
 {%- set collected = {} %}
 {%- for alias in ordered %}
 {%-   set model = os.environ["AGENTS_" + alias + "_MODEL"] %}
-{%-   if model and (not enabled_models.length or enabled_models.includes(alias.toLowerCase())) %}
+{%-   if model %}
 {%-     set long_context = model.endsWith("[1m]") %}
 {%-     set slug = model.slice(0, -4) if long_context else model %}
 {%-     set description = os.environ["AGENTS_" + alias + "_MODEL_DESCRIPTION"] %}

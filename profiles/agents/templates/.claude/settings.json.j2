@@ -1,23 +1,26 @@
 {#- Canonical model registry: AGENTS_<ALIAS>_MODEL, rendered as Claude Code's
-    pinned alias env vars. FABLE/OPUS/SONNET/HAIKU lead, remaining aliases sort. -#}
-{%- set aliases = [] %}
-{%- for key, val in os.environ %}
-{%-   if key.startsWith("AGENTS_") and key.endsWith("_MODEL") %}
-{%-     set _ = aliases.push(key.slice(7, -6)) %}
-{%-   endif %}
-{%- endfor %}
-{%- set ordered = ["FABLE", "OPUS", "SONNET", "HAIKU"] %}
-{%- for alias in aliases | sort %}
-{%-   if not ordered.includes(alias) %}
-{%-     set _ = ordered.push(alias) %}
-{%-   endif %}
-{%- endfor %}
-{%- set enabled_models = [] %}
+    pinned alias env vars. AGENTS_CLAUDE_CODE_ENABLED_MODELS defines selection
+    and order; without it, FABLE/OPUS/SONNET/HAIKU lead and remaining aliases sort. -#}
+{%- set ordered = [] %}
 {%- for alias in (AGENTS_CLAUDE_CODE_ENABLED_MODELS or "").split(",") %}
 {%-   if alias.trim() %}
-{%-     set _ = enabled_models.push(alias.trim().toLowerCase()) %}
+{%-     set _ = ordered.push(alias.trim().toUpperCase()) %}
 {%-   endif %}
-{%- endfor -%}
+{%- endfor %}
+{%- if not ordered.length %}
+{%-   set ordered = ["FABLE", "OPUS", "SONNET", "HAIKU"] %}
+{%-   set aliases = [] %}
+{%-   for key, val in os.environ %}
+{%-     if key.startsWith("AGENTS_") and key.endsWith("_MODEL") %}
+{%-       set _ = aliases.push(key.slice(7, -6)) %}
+{%-     endif %}
+{%-   endfor %}
+{%-   for alias in aliases | sort %}
+{%-     if not ordered.includes(alias) %}
+{%-       set _ = ordered.push(alias) %}
+{%-     endif %}
+{%-   endfor %}
+{%- endif -%}
 {
   "env": {
     {%- if AGENTS_API_KEY %}
@@ -35,7 +38,7 @@
     {%- endif %}
     {%- for alias in ordered %}
     {%-   set model = os.environ["AGENTS_" + alias + "_MODEL"] %}
-    {%-   if model and (not enabled_models.length or enabled_models.includes(alias.toLowerCase())) %}
+    {%-   if model %}
     {%-     set effort = os.environ["AGENTS_" + alias + "_REASONING_EFFORT"] %}
     {%-     set description = os.environ["AGENTS_" + alias + "_MODEL_DESCRIPTION"] %}
     {#-     Gateways that select effort through the model name take the suffix
