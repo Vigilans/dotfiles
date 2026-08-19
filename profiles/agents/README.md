@@ -23,6 +23,7 @@ Endpoint and models are declared once, in a tool-agnostic schema this profile ow
 | `AGENTS_CLAUDE_CODE_ENABLED_MODELS` | Comma-separated model aliases enabled for Claude Code. Matching is case-insensitive; all registered aliases are enabled when unset. |
 | `AGENTS_CODEX_CHATGPT_LOGIN` | Set to `true` to require a Codex ChatGPT/API-key login while keeping the gateway credential provider-scoped. |
 | `AGENTS_CODEX_ENABLED_MODELS` | Comma-separated model aliases enabled for Codex. Matching is case-insensitive; all registered aliases are enabled when unset. |
+| `AGENTS_CODEX_AUTO_COMPACT_LIMIT_1M` | Auto-compact token limit for Codex models marked `[1m]`. |
 | `AGENTS_CODEX_MULTI_AGENT_VERSION` | Codex multi-agent backend: `v1` or `v2`, defaulting to `v2`. Sets both the catalog's per-model version and the matching feature flag. |
 | `AGENTS_<ALIAS>_MODEL` | Canonical model ID. Declaring one is what registers `<ALIAS>`. A trailing `[1m]` marks a 1M-context deployment. |
 | `AGENTS_<ALIAS>_MODEL_DESCRIPTION` | Display name shown in model pickers. |
