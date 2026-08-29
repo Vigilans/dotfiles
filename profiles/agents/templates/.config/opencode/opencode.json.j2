@@ -1,0 +1,131 @@
+{#- Canonical model registry (AGENTS_<ALIAS>_MODEL) rendered as opencode's
+    custom provider. AGENTS_OPENCODE_ENABLED_MODELS defines selection and
+    order; without it, every registered alias sorts. -#}
+{%- set provider = AGENTS_MODEL_PROVIDER or "custom" %}
+{#- Effort ladder, ordered. AGENTS_<ALIAS>_REASONING_EFFORT names the highest
+    level a model supports. -#}
+{%- set effort_levels = ["none", "low", "medium", "high", "xhigh", "max"] %}
+{%- set ordered = [] %}
+{%- for alias in (AGENTS_OPENCODE_ENABLED_MODELS or "").split(",") %}
+{%-   if alias.trim() %}
+{%-     set _ = ordered.push(alias.trim().toUpperCase()) %}
+{%-   endif %}
+{%- endfor %}
+{%- if not ordered.length %}
+{%-   set aliases = [] %}
+{%-   for key, val in os.environ %}
+{%-     if key.startsWith("AGENTS_") and key.endsWith("_MODEL") %}
+{%-       set _ = aliases.push(key.slice(7, -6)) %}
+{%-     endif %}
+{%-   endfor %}
+{%-   for alias in aliases | sort %}
+{%-     set _ = ordered.push(alias) %}
+{%-   endfor %}
+{%- endif %}
+{#- Aliases collapse to one entry per model id: effort selects a variant at
+    runtime instead of naming a model, so aliases of one model differ only in
+    how far up the ladder they reach, and the entry keeps the highest. The [1m]
+    context annotation is a Claude Code convention the gateway does not
+    accept. -#}
+{%- set slugs = [] %}
+{%- set collected = {} %}
+{%- for alias in ordered %}
+{%-   set model = os.environ["AGENTS_" + alias + "_MODEL"] %}
+{%-   if model %}
+{%-     set long_context = model.endsWith("[1m]") %}
+{%-     set slug = model.slice(0, -4) if long_context else model %}
+{%-     set effort = os.environ["AGENTS_" + alias + "_REASONING_EFFORT"] %}
+{%-     if effort and not effort_levels.includes(effort) %}
+{%-       set _ = fail("AGENTS_" + alias + "_REASONING_EFFORT must be one of " + effort_levels.join(", ")) %}
+{%-     endif %}
+{%-     set seen = collected[slug] %}
+{%-     if not seen %}
+{%-       set _ = slugs.push(slug) %}
+{%-     endif %}
+{%-     if seen and effort_levels.indexOf(seen.effort or "") > effort_levels.indexOf(effort or "") %}
+{%-       set effort = seen.effort %}
+{%-     endif %}
+{%-     set collected = json.merge(collected, slug, {
+          "long_context": long_context,
+          "description": (seen.description if seen else "") or os.environ["AGENTS_" + alias + "_MODEL_DESCRIPTION"] or alias,
+          "effort": effort,
+          "vision": (seen.vision if seen else "") or os.environ["AGENTS_" + alias + "_MODEL_VISION"]
+        }) %}
+{%-   endif %}
+{%- endfor %}
+{
+  "$schema": "https://opencode.ai/config.json",
+  {%- if AGENTS_BASE_URL %}
+  "provider": {
+    "{{ provider }}": {
+      "npm": "@ai-sdk/anthropic",
+      "name": "{{ AGENTS_MODEL_PROVIDER_DESCRIPTION or provider }}",
+      "options": {
+        "baseURL": "{{ AGENTS_BASE_URL }}/v1"
+        {%- if AGENTS_API_KEY %},
+        "apiKey": "{{ AGENTS_API_KEY }}"
+        {%- endif %}
+      },
+      {#- Wire selection is a heuristic on the model family: models in general
+          are reachable over /v1/messages, while GPT models are natively served
+          over /v1/responses. -#}
+      "models": {
+        {%- for slug in slugs %}
+        {%-   set entry = collected[slug] %}
+        {%-   set gpt = slug.startsWith("gpt-") %}
+        "{{ slug }}": {
+          "name": "{{ entry.description }}",
+          "attachment": {{ "false" if entry.vision == "false" else "true" }},
+          {#- Declaring a reasoning model is what makes opencode derive its
+              effort variants; the ladder itself comes from the model family. -#}
+          "reasoning": {{ "true" if entry.effort else "false" }},
+          "modalities": {
+            "input": [{{ '"text"' if entry.vision == "false" else '"text", "image"' }}],
+            "output": ["text"]
+          },
+          "limit": {
+            "context": {{ 1000000 if entry.long_context else 272000 }},
+            "output": 32768
+          }
+          {#- Declared variants merge into the ladder opencode derives from the
+              model family and win on name collision, so each payload carries
+              the whole shape its wire expects. The derived ladders stop short
+              of the levels the gateway serves. -#}
+          {%- if entry.effort %},
+          {%- set levels = effort_levels.slice(0, effort_levels.indexOf(entry.effort) + 1) %}
+          "variants": {
+            {%- for level in levels %}
+            {%-   if gpt %}
+            "{{ level }}": { "reasoningEffort": "{{ level }}", "reasoningSummary": "auto", "include": ["reasoning.encrypted_content"] }{% if not loop.last %},{% endif %}
+            {%-   elif level == "none" %}
+            {#-   Anthropic's effort enum has no `none`: the level is expressed
+                  by turning thinking off instead. -#}
+            "{{ level }}": { "thinking": { "type": "disabled" } }{% if not loop.last %},{% endif %}
+            {%-   else %}
+            "{{ level }}": { "thinking": { "type": "adaptive", "display": "summarized" }, "effort": "{{ level }}" }{% if not loop.last %},{% endif %}
+            {%-   endif %}
+            {%- endfor %}
+          }
+          {%- endif %}
+          {%- if gpt %},
+          "provider": { "npm": "@ai-sdk/openai" }
+          {%- endif %}
+        }{% if not loop.last %},{% endif %}
+        {%- endfor %}
+      }
+    }
+  },
+  {%- endif %}
+  {%- if AGENTS_VISION_AGENT_ALIAS %}
+  {%-   set vision_model = os.environ["AGENTS_" + AGENTS_VISION_AGENT_ALIAS.toUpperCase() + "_MODEL"] %}
+  {%-   if not vision_model %}
+  {%-     set _ = fail("AGENTS_VISION_AGENT_ALIAS names an unregistered alias") %}
+  {%-   endif %}
+  "agent": {
+    "vision": {
+      "model": "{{ provider }}/{{ vision_model.slice(0, -4) if vision_model.endsWith("[1m]") else vision_model }}"
+    }
+  },
+  {%- endif %}
+  "autoupdate": false
+}

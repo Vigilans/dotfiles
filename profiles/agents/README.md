@@ -4,11 +4,11 @@ Cross-tool config for AGENTS.md-aware coding agents (Claude Code, Codex, opencod
 
 Self-authored content — sub-agent definitions under `agents/` and any first-party skills under `skills/` — is stowed directly from dotfiles. The `AGENTS.md` rules file lives in [Vigilans/agents](https://github.com/Vigilans/agents), pulled in as a submodule at [dotfiles/.local/share/agents/](dotfiles/.local/share/agents/). Vendor skills are not committed: they're declared in `.skill-lock.json` and restored by `npx skills add` at `install` time, so the lock is the source of truth for which third-party skills are pinned.
 
-Per-tool config that can't be shared (Claude Code's `settings.json`, Codex's `config.toml` / `models.json`) is rendered at `package` time from [templates/](templates/), interpolating values from the `.env` channel.
+Per-tool config that can't be shared (Claude Code's `settings.json`, Codex's `config.toml` / `models.json`, opencode's `opencode.json`) is rendered at `package` time from [templates/](templates/), interpolating values from the `.env` channel.
 
 `prepare` installs runtime dependencies (`jq`, `node`, `ripgrep`) and installs or updates the standalone Codex CLI on Linux and macOS. `package` exports a Codex model catalog prototype into `build/`. `install` restores vendor skills, ensures Claude Code is available, and syncs configured plugins. `upgrade` updates Codex, vendor skills, Claude plugins, and ClawGod when selected.
 
-The rendered `settings.json`, `config.toml`, and `models.json` are `.gitignore`'d so runtime mutations (Claude Code's `/effort`, Codex's model picker, etc.) don't produce diffs in dotfiles. Codex's runtime-owned `auth.json` is ignored separately.
+The rendered `settings.json`, `config.toml`, `models.json`, and `opencode.json` are `.gitignore`'d so runtime mutations (Claude Code's `/effort`, Codex's model picker, etc.) don't produce diffs in dotfiles. Codex's runtime-owned `auth.json` is ignored separately.
 
 ## Inputs from other profiles
 
@@ -25,6 +25,8 @@ Endpoint and models are declared once, in a tool-agnostic schema this profile ow
 | `AGENTS_CODEX_ENABLED_MODELS` | Comma-separated model aliases enabled for Codex. Matching is case-insensitive; all registered aliases are enabled when unset. |
 | `AGENTS_CODEX_AUTO_COMPACT_LIMIT_1M` | Auto-compact token limit for Codex models marked `[1m]`. |
 | `AGENTS_CODEX_MULTI_AGENT_VERSION` | Codex multi-agent backend: `v1` or `v2`, defaulting to `v2`. Sets both the catalog's per-model version and the matching feature flag. |
+| `AGENTS_OPENCODE_ENABLED_MODELS` | Comma-separated model aliases enabled for opencode. Matching is case-insensitive; all registered aliases are enabled when unset. |
+| `AGENTS_VISION_AGENT_ALIAS` | Alias of the model the `vision` sub-agent runs on, for tools that bind a model per agent. |
 | `AGENTS_<ALIAS>_MODEL` | Canonical model ID. Declaring one is what registers `<ALIAS>`. A trailing `[1m]` marks a 1M-context deployment. |
 | `AGENTS_<ALIAS>_MODEL_DESCRIPTION` | Display name shown in model pickers. |
 | `AGENTS_<ALIAS>_REASONING_EFFORT` | Default effort for the model: `minimal`, `low`, `medium`, `high`, `xhigh`, or `max`. |

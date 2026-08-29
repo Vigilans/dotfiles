@@ -1,5 +1,6 @@
 dotfiles/.cc-safety-net/policy.json
 dotfiles/.claude/settings.json
+dotfiles/.config/opencode/opencode.json
 dotfiles/.codex/auth.json
 dotfiles/.codex/config.toml
 dotfiles/.codex/models.json
