@@ -23,6 +23,7 @@
 {%-   set config = toml.merge(config, "model_providers", toml.merge(config.model_providers or {}, provider, provider_config)) %}
 {%- endif %}
 {%- set config = toml.merge(config, "model_catalog_json", "models.json") %}
+{%- set config = toml.merge(config, "experimental_compact_prompt_file", "./compact-prompt.md") %}
 {%- set config = toml.merge(config, "model_reasoning_summary", "detailed") %}
 {%- set config = toml.merge(config, "web_search", "live") %}
 {%- set config = toml.merge(config, "suppress_unstable_features_warning", true) %}
