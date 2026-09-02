@@ -153,7 +153,15 @@ the visual content could not be inspected.
 {%-   set model = json.merge(model, "description", null) %}
 {%-   set model = json.merge(model, "availability_nux", null) %}
 {%-   set model = json.merge(model, "default_reasoning_level", entry.effort or "medium") %}
-{%-   set model = json.merge(model, "supported_reasoning_levels", reasoning_levels) %}
+{%-   if slug.startsWith("kimi") or slug.startsWith("glm") or slug.startsWith("deepseek") %}
+{%-     set model = json.merge(model, "supported_reasoning_levels",
+          [reasoning_levels[5], reasoning_levels[3], reasoning_levels[1]]) %}{# 5/3/1 = max/high/low #}
+{%-   elif slug.startsWith("qwen") %}
+{%-     set model = json.merge(model, "supported_reasoning_levels",
+          [reasoning_levels[4], reasoning_levels[2], reasoning_levels[1]]) %}{# 4/2/1 = xhigh/medium/low #}
+{%-   else %}
+{%-     set model = json.merge(model, "supported_reasoning_levels", reasoning_levels) %}
+{%-   endif %}
 {%-   set model = json.merge(model, "context_window", context_window) %}
 {%-   set model = json.merge(model, "max_context_window", context_window) %}
 {%-   if entry.long_context and AGENTS_CODEX_AUTO_COMPACT_LIMIT_1M %}
