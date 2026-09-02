@@ -50,7 +50,10 @@
 {%-   set _ = fail("AGENTS_CODEX_MULTI_AGENT_VERSION must be v1 or v2") %}
 {%- endif %}
 {#- Appended to the prompts of models that cannot see. input_modalities stays
-    image-capable so those models still accept pasted images. -#}
+    image-capable so those models still accept pasted images. Every model here
+    runs in code mode, where an agent role's own description reaches the model
+    only if it goes looking for it, so the spawn protocol is spelled out in the
+    prompt instead. -#}
 {%- set vision_delegation %}
 ## Visual input delegation
 
@@ -172,12 +175,6 @@ the visual content could not be inspected.
       server-executed tools, so Codex drops web_search and image_generation
       entirely. Third-party models need the standard Responses shape. -#}
 {%-   set model = json.merge(model, "use_responses_lite", false) %}
-{%-   if not slug.startsWith("gpt-") %}
-{%-     set model = json.merge(model, "tool_mode", null) %}
-{%-   endif %}
-{%-   if slug.startsWith("kimi") %}
-{%-     set model = json.merge(model, "supports_search_tool", false) %}
-{%-   endif %}
 {%-   set model = json.merge(model, "supports_parallel_tool_calls", true) %}
 {%-   set model = json.merge(model, "supports_image_detail_original", false) %}
 {%-   set model = json.merge(model, "service_tiers", []) %}
