@@ -9,7 +9,7 @@
 {%- if AGENTS_BASE_URL %}
 {%-   set provider_config = {
       "name": AGENTS_MODEL_PROVIDER_DESCRIPTION or provider,
-      "base_url": AGENTS_BASE_URL,
+      "base_url": AGENTS_BASE_URL if AGENTS_BASE_URL.endsWith("/v1") or AGENTS_BASE_URL.endsWith("/v1/") else AGENTS_BASE_URL + "/v1",
       "requires_openai_auth": AGENTS_CODEX_CHATGPT_LOGIN == "true",
       "wire_api": "responses"
     } %}
