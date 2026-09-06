@@ -159,6 +159,9 @@ the visual content could not be inspected.
 {%-   elif slug.startsWith("qwen") %}
 {%-     set model = json.merge(model, "supported_reasoning_levels",
           [reasoning_levels[1], reasoning_levels[2], reasoning_levels[4]]) %}{# 1/2/4 = low/medium/xhigh #}
+{%-   elif slug.startsWith("gemini") %}
+{%-     set model = json.merge(model, "supported_reasoning_levels",
+          [reasoning_levels[1], reasoning_levels[2], reasoning_levels[3]]) %}{# 1/2/3 = low/medium/high #}
 {%-   else %}
 {%-     set model = json.merge(model, "supported_reasoning_levels", reasoning_levels) %}
 {%-   endif %}
