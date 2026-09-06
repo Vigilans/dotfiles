@@ -155,10 +155,10 @@ the visual content could not be inspected.
 {%-   set model = json.merge(model, "default_reasoning_level", entry.effort or "medium") %}
 {%-   if slug.startsWith("kimi") or slug.startsWith("glm") or slug.startsWith("deepseek") %}
 {%-     set model = json.merge(model, "supported_reasoning_levels",
-          [reasoning_levels[5], reasoning_levels[3], reasoning_levels[1]]) %}{# 5/3/1 = max/high/low #}
+          [reasoning_levels[1], reasoning_levels[3], reasoning_levels[5]]) %}{# 1/3/5 = low/high/max #}
 {%-   elif slug.startsWith("qwen") %}
 {%-     set model = json.merge(model, "supported_reasoning_levels",
-          [reasoning_levels[4], reasoning_levels[2], reasoning_levels[1]]) %}{# 4/2/1 = xhigh/medium/low #}
+          [reasoning_levels[1], reasoning_levels[2], reasoning_levels[4]]) %}{# 1/2/4 = low/medium/xhigh #}
 {%-   else %}
 {%-     set model = json.merge(model, "supported_reasoning_levels", reasoning_levels) %}
 {%-   endif %}
