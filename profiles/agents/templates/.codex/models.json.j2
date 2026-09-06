@@ -162,6 +162,10 @@ the visual content could not be inspected.
 {%-   elif slug.startsWith("gemini") %}
 {%-     set model = json.merge(model, "supported_reasoning_levels",
           [reasoning_levels[1], reasoning_levels[2], reasoning_levels[3]]) %}{# 1/2/3 = low/medium/high #}
+{%-   elif slug.startsWith("gpt-4") %}{# Models in this branch do not support reasoning. #}
+{%-     set model = json.merge(model, "supported_reasoning_levels", []) %}
+{%-     set model = json.merge(model, "default_reasoning_level", null) %}
+{%-     set model = json.merge(model, "supports_reasoning_summary_parameter", false) %}
 {%-   else %}
 {%-     set model = json.merge(model, "supported_reasoning_levels", reasoning_levels) %}
 {%-   endif %}
