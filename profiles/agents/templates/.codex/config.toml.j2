@@ -25,6 +25,7 @@
 {%- set config = toml.merge(config, "model_catalog_json", "models.json") %}
 {%- set config = toml.merge(config, "experimental_compact_prompt_file", "./compact-prompt.md") %}
 {%- set config = toml.merge(config, "model_reasoning_summary", "detailed") %}
+{%- set config = toml.merge(config, "show_raw_agent_reasoning", true) %}
 {%- set config = toml.merge(config, "web_search", "live") %}
 {%- set config = toml.merge(config, "suppress_unstable_features_warning", true) %}
 
