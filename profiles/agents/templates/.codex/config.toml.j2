@@ -42,11 +42,30 @@
 {%- set config = toml.merge(config, "marketplaces",
       toml.merge(marketplaces, "cc-marketplace", marketplace)) %}
 
-{%- set plugins = config.plugins or {} %}
-{%- set plugin = plugins["cc-safety-net@cc-marketplace"] or {} %}
-{%- set plugin = toml.merge(plugin, "enabled", true) %}
-{%- set config = toml.merge(config, "plugins",
-      toml.merge(plugins, "cc-safety-net@cc-marketplace", plugin)) %}
+{%- set plugin_ids = ["cc-safety-net@cc-marketplace",
+                     "computer-use@openai-bundled",
+                     "unified-computer-use@openai-bundled"] %}
+{%- set bundled = json.parse(fs.readFile(DOTFILES_HOME +
+      "/.codex/.tmp/bundled-marketplaces/openai-bundled/.agents/plugins/marketplace.json") or '{"plugins": []}') %}
+{%- set bundled = bundled.plugins | groupby("name") %}
+
+{#- Preserve unmanaged plugins; rebuild managed entries below. -#}
+{%- set plugins = {} %}
+{%- for plugin_id, plugin in config.plugins or {} %}
+{%-   if plugin_id not in plugin_ids %}
+{%-     set plugins = toml.merge(plugins, plugin_id, plugin) %}
+{%-   endif %}
+{%- endfor %}
+
+{#- Enable plugins managed by this template.
+    Bundled plugins are included only when present in the local catalog. -#}
+{%- for plugin_id in plugin_ids %}
+{%-   if not plugin_id.endsWith("@openai-bundled") or bundled[plugin_id.split("@")[0]] %}
+{%-     set plugin = toml.merge(config.plugins[plugin_id] or {}, "enabled", true) %}
+{%-     set plugins = toml.merge(plugins, plugin_id, plugin) %}
+{%-   endif %}
+{%- endfor %}
+{%- set config = toml.merge(config, "plugins", plugins) %}
 
 {#- Multi-agent -#}
 {%- set config = toml.merge(config, "features", toml.merge(config.features or {},
