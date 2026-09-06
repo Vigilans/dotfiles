@@ -626,6 +626,7 @@ render_templates_nunjucks() {
         const nunjucks = resolveFromNpx('nunjucks');
         const toml = resolveFromNpx('smol-toml');
         const { src, dst } = process.env;
+        const context = { ...process.env, HOME: process.env.HOME?.replaceAll('\\', '/') };
         const env = nunjucks.configure(src, { autoescape: false, throwOnUndefined: true });
         env.addGlobal('fs', {
             readFile(filename) {
@@ -655,7 +656,7 @@ render_templates_nunjucks() {
                     const profile = path.dirname(src);
                     console.log('RENDER: ' + path.join(path.relative(profile, src), r) + ' => ' + path.relative(profile, out));
                     fs.mkdirSync(path.dirname(out), { recursive: true });
-                    fs.writeFileSync(out, env.render(r, { ...process.env, os: { environ: process.env } }));
+                    fs.writeFileSync(out, env.render(r, { ...context, os: { environ: context } }));
                 }
             }
         })('');
