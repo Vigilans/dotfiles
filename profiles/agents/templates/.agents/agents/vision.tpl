@@ -1,6 +1,5 @@
-name = "vision"
-
-description = """
+{% from ".agents/_helpers.tpl" import render_agent with context %}
+{%- set description %}
 Use this vision-capable agent when a task depends on understanding images,
 screenshots, scanned pages, visual document layout, UI state, charts, diagrams,
 or differences between visual sources.
@@ -19,12 +18,8 @@ and action in the parent agent.
 
 Do not use this agent for image generation, image editing, UI operation,
 implementation work, or tasks that do not require visual inspection.
-"""
-
-model = "gpt-5.6-luna"
-model_reasoning_effort = "max"
-
-developer_instructions = '''
+{% endset %}
+{%- set instructions %}
 Act as a visual analysis specialist. Inspect visual material and return the
 evidence the parent agent needs; leave final synthesis and action to the parent.
 
@@ -92,4 +87,8 @@ Keep investigated sources and pre-existing user data unchanged. Temporary
 crops, rendered pages, or analysis artifacts may be created only in a dedicated
 temporary location. Do not persist them or write reports into an existing
 project unless the parent explicitly requests that artifact.
-'''
+{% endset %}
+{{- render_agent("VISION", description, instructions, {
+    "CODEX": {"model":"gpt-5.6-luna","effort":"max"},
+    "CLAUDE_CODE": {"model":"sonnet"}
+}) }}

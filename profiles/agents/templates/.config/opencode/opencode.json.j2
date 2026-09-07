@@ -14,7 +14,7 @@
 {%- if not ordered.length %}
 {%-   set aliases = [] %}
 {%-   for key, val in os.environ %}
-{%-     if key.startsWith("AGENTS_") and key.endsWith("_MODEL") %}
+{%-     if key.startsWith("AGENTS_") and key.endsWith("_MODEL") and not key.startsWith("AGENTS_SUBAGENT_") %}
 {%-       set _ = aliases.push(key.slice(7, -6)) %}
 {%-     endif %}
 {%-   endfor %}
@@ -113,17 +113,6 @@
         }{% if not loop.last %},{% endif %}
         {%- endfor %}
       }
-    }
-  },
-  {%- endif %}
-  {%- if AGENTS_VISION_AGENT_ALIAS %}
-  {%-   set vision_model = os.environ["AGENTS_" + AGENTS_VISION_AGENT_ALIAS.toUpperCase() + "_MODEL"] %}
-  {%-   if not vision_model %}
-  {%-     set _ = fail("AGENTS_VISION_AGENT_ALIAS names an unregistered alias") %}
-  {%-   endif %}
-  "agent": {
-    "vision": {
-      "model": "{{ provider }}/{{ vision_model.slice(0, -4) if vision_model.endsWith("[1m]") else vision_model }}"
     }
   },
   {%- endif %}

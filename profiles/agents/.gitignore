@@ -4,3 +4,6 @@ dotfiles/.config/opencode/opencode.json
 dotfiles/.codex/auth.json
 dotfiles/.codex/config.toml
 dotfiles/.codex/models.json
+dotfiles/.codex/agents/*.toml
+dotfiles/.claude/agents/*.md
+dotfiles/.config/opencode/agents/*.md

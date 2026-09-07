@@ -35,7 +35,7 @@
 {%-   set ordered = ["GPT", "GPT_SOL", "GPT_TERRA", "GPT_LUNA", "FABLE", "OPUS", "SONNET", "HAIKU"] %}
 {%-   set aliases = [] %}
 {%-   for key, val in os.environ %}
-{%-     if key.startsWith("AGENTS_") and key.endsWith("_MODEL") %}
+{%-     if key.startsWith("AGENTS_") and key.endsWith("_MODEL") and not key.startsWith("AGENTS_SUBAGENT_") %}
 {%-       set _ = aliases.push(key.slice(7, -6)) %}
 {%-     endif %}
 {%-   endfor %}
