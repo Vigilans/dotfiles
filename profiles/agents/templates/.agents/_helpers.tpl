@@ -56,7 +56,7 @@
 {%- set key = name.toUpperCase().replaceAll("-", "_") %}
 {%- set app = client + "_SUBAGENT_" + key %}
 {%- set shared = "AGENTS_SUBAGENT_" + role %}
-{%- set defaults = defaults[client] or {} %}
+{%- set defaults = defaults["CLAUDE_CODE" if client == "OPENCODE" else client] or {} %}
 {%- set model = json.parse(resolve_model(
       os.environ[app + "_MODEL"] or os.environ[shared + "_MODEL"] or defaults.model,
       os.environ[app + "_REASONING_EFFORT"] or os.environ[shared + "_REASONING_EFFORT"],
