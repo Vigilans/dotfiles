@@ -1,33 +1,6 @@
 {
   "version": 3,
   "skills": {
-    "tavily-extract": {
-      "source": "tavily-ai/skills",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/tavily-ai/skills.git",
-      "skillPath": "skills/tavily-extract/SKILL.md",
-      "skillFolderHash": "5de24876e7faa5789ba64c4c07ed32e4bcfe2f4b",
-      "installedAt": "2026-04-25T13:09:02.653Z",
-      "updatedAt": "2026-05-10T15:36:08.235Z"
-    },
-    "tavily-search": {
-      "source": "tavily-ai/skills",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/tavily-ai/skills.git",
-      "skillPath": "skills/tavily-search/SKILL.md",
-      "skillFolderHash": "74e6f8996fa49a3ebe8aa8f3dbddc4a2c2b5e5e4",
-      "installedAt": "2026-04-25T13:09:02.713Z",
-      "updatedAt": "2026-04-29T08:45:19.701Z"
-    },
-    "tavily-map": {
-      "source": "tavily-ai/skills",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/tavily-ai/skills.git",
-      "skillPath": "skills/tavily-map/SKILL.md",
-      "skillFolderHash": "ab5d8fa7f3db58ebee1907357b66159a54bcd1a2",
-      "installedAt": "2026-05-03T12:44:01.377Z",
-      "updatedAt": "2026-05-07T08:04:55.117Z"
-    },
     "grill-me": {
       "source": "mattpocock/skills",
       "sourceType": "github",
@@ -42,9 +15,9 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/mattpocock/skills.git",
       "skillPath": "skills/productivity/grilling/SKILL.md",
-      "skillFolderHash": "0d40d978f1a588971a11ea7ae85b208e78102dc3",
+      "skillFolderHash": "f0732035b8b1b60ae39454e4191caef32fa91903",
       "installedAt": "2026-07-23T14:18:47.873Z",
-      "updatedAt": "2026-08-16T12:57:01.850Z"
+      "updatedAt": "2026-09-08T03:31:34.650Z"
     },
     "writing-skills": {
       "source": "obra/superpowers",
@@ -54,6 +27,15 @@
       "skillFolderHash": "1768f7552ec98fc6b06aeea747a0c4ef6bde0473",
       "installedAt": "2026-07-23T14:44:16.483Z",
       "updatedAt": "2026-08-12T17:09:07.501Z"
+    },
+    "defuddle": {
+      "source": "kepano/obsidian-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/kepano/obsidian-skills.git",
+      "skillPath": "skills/defuddle/SKILL.md",
+      "skillFolderHash": "db0b775af7e7d603f59fa2b67bdef615baf1a48f",
+      "installedAt": "2026-09-08T05:55:30.396Z",
+      "updatedAt": "2026-09-08T05:55:30.396Z"
     }
   },
   "dismissed": {
