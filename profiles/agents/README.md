@@ -33,6 +33,7 @@ Endpoint and models are declared once, in a tool-agnostic schema this profile ow
 | `AGENTS_CODEX_CHATGPT_LOGIN` | Set to `true` to require a Codex ChatGPT/API-key login while keeping the gateway credential provider-scoped. |
 | `AGENTS_CODEX_ENABLED_MODELS` | Comma-separated model aliases enabled for Codex. Matching is case-insensitive; all registered aliases are enabled when unset. |
 | `AGENTS_CODEX_AUTO_COMPACT_LIMIT_1M` | Auto-compact token limit for Codex models marked `[1m]`. |
+| `AGENTS_CODEX_AUTO_REVIEW_MODEL_OVERRIDE` | Approval-review model ID. When unset, preserves the upstream override or uses the sole enabled model with an upstream review policy. |
 | `AGENTS_CODEX_MULTI_AGENT_VERSION` | Codex multi-agent backend: `v1` or `v2`, defaulting to `v2`. Sets both the catalog's per-model version and the matching feature flag. |
 | `AGENTS_OPENCODE_ENABLED_MODELS` | Comma-separated model aliases enabled for opencode. Matching is case-insensitive; all registered aliases are enabled when unset. |
 

@@ -1,12 +1,27 @@
 {#- Canonical model registry (AGENTS_<ALIAS>_MODEL) rendered as a Codex model
     catalog. Codex requires a full ModelInfo per entry — including the base
-    instructions prompt — so every entry clones the prototype `package` exported
-    from the installed binary, and only canonical fields are patched. -#}
+    instructions prompt — so entries use their native bundled definitions,
+    with Sol as the fallback and local compatibility overrides applied below. -#}
 {%- set prototype = fs.readFile(PROFILE_ROOT + "/build/codex-models.json") %}
 {%- if not prototype %}
 {%-   set _ = fail("missing build/codex-models.json — run the profile's package phase") %}
 {%- endif %}
-{%- set base = json.parse(prototype).models | selectattr("visibility", "equalto", "list") | first %}
+{%- set catalog = {} %}
+{%- set base = null %}
+{%- set sol = null %}
+{%- set astra = null %}
+{%- for model in json.parse(prototype).models %}
+{%-   set catalog = json.merge(catalog, model.slug, model) %}
+{%-   if model.slug.endsWith("-sol") and not sol %}
+{%-     set sol = model %}
+{%-   elif model.slug.endsWith("-astra") and not astra %}
+{%-     set astra = model %}
+{%-   endif %}
+{%-   if not base and model.visibility == "list" %}
+{%-     set base = model %}
+{%-   endif %}
+{%- endfor %}
+{%- set base = sol or base %}{# Sol provides the general-purpose fallback prompt. #}
 {%- if not base %}
 {%-   set _ = fail("no picker-visible model in the Codex catalog prototype") %}
 {%- endif %}
@@ -143,16 +158,35 @@ the visual content could not be inspected.
         }) %}
 {%-   endif %}
 {%- endfor %}
+{#- Only enabled models with an upstream review policy can supply this default. -#}
+{%- set review_candidates = [] %}
+{%- for slug in slugs %}
+{%-   if catalog[slug].model_messages.auto_review.policy %}
+{%-     set _ = review_candidates.push(slug) %}
+{%-   endif %}
+{%- endfor %}
+{%- set default_review_model = review_candidates[0] if review_candidates.length == 1 else null %}
 {%- set models = [] %}
 {%- for slug in slugs %}
 {%-   set entry = collected[slug] %}
-{%-   set context_window = 1000000 if entry.long_context else 272000 %}
-{%-   set model = base %}
+{%-   set model = catalog[slug] or base %}
+{%-   if slug.endsWith("-sol") and astra %}{# Use Astra's guidance to curb Sol's over-confirmation, over-testing, and skill overuse. #}
+{%-     set model = json.merge(model, "base_instructions",
+          astra.base_instructions or astra.model_messages.instructions_template) %}
+{%-     for field in ["instructions_template", "instructions_variables"] %}
+{%-       set model = json.merge(model, "model_messages", json.merge(model.model_messages,
+            field, astra.model_messages[field])) %}
+{%-     endfor %}
+{%-   endif %}
+{%-   set model = json.merge(model, "auto_review_model_override",
+        AGENTS_CODEX_AUTO_REVIEW_MODEL_OVERRIDE or model.auto_review_model_override or default_review_model) %}
 {%-   set model = json.merge(model, "slug", slug) %}
 {%-   set model = json.merge(model, "display_name", entry.description or slug) %}
 {%-   set model = json.merge(model, "description", null) %}
 {%-   set model = json.merge(model, "availability_nux", null) %}
-{%-   set model = json.merge(model, "default_reasoning_level", entry.effort or "medium") %}
+{%-   if entry.effort %}
+{%-     set model = json.merge(model, "default_reasoning_level", entry.effort) %}
+{%-   endif %}
 {%-   if slug.startsWith("kimi") or slug.startsWith("glm") or slug.startsWith("deepseek") %}
 {%-     set model = json.merge(model, "supported_reasoning_levels",
           [reasoning_levels[1], reasoning_levels[3], reasoning_levels[5]]) %}{# 1/3/5 = low/high/max #}
@@ -169,8 +203,10 @@ the visual content could not be inspected.
 {%-   else %}
 {%-     set model = json.merge(model, "supported_reasoning_levels", reasoning_levels) %}
 {%-   endif %}
-{%-   set model = json.merge(model, "context_window", context_window) %}
-{%-   set model = json.merge(model, "max_context_window", context_window) %}
+{%-   if entry.long_context %}
+{%-     set model = json.merge(model, "context_window", 1000000) %}
+{%-     set model = json.merge(model, "max_context_window", 1000000) %}
+{%-   endif %}
 {%-   if entry.long_context and AGENTS_CODEX_AUTO_COMPACT_LIMIT_1M %}
 {%-     set model = json.merge(model, "effective_context_window_percent", 100) %}
 {%-     set model = json.merge(model, "auto_compact_token_limit", AGENTS_CODEX_AUTO_COMPACT_LIMIT_1M | int) %}
@@ -190,7 +226,7 @@ the visual content could not be inspected.
 {%-   set model = json.merge(model, "multi_agent_version", multi_agent_version) %}
 {%-   if entry.vision == "false" %}
 {%-     set model = json.merge(model, "base_instructions",
-          model.base_instructions + vision_delegation) %}
+          (model.base_instructions or model.model_messages.instructions_template) + vision_delegation) %}
 {%-     set model = json.merge(model, "model_messages", json.merge(model.model_messages,
           "instructions_template", model.model_messages.instructions_template + vision_delegation)) %}
 {%-   endif %}
