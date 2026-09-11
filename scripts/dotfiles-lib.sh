@@ -704,7 +704,7 @@ dotfiles_ensure_node() {
 render_templates_nunjucks() {
     local src="$1" dst="$2"
     [ -d "$src" ] || return 0
-    src="$src" dst="$dst" npx --yes -p nunjucks@^3 -p smol-toml@^1 node -e "$(cat <<'JS'
+    src="$src" dst="$dst" npx --yes -p nunjucks@^3 -p smol-toml@^1 node - <<'JS'
         const path = require('path');
         const fs = require('fs');
         const npxBin = process.env.PATH.split(path.delimiter).find(p => /[\/\\]_npx[\/\\].+[\/\\]node_modules[\/\\]\.bin$/.test(p));
@@ -748,5 +748,4 @@ render_templates_nunjucks() {
             }
         })('');
 JS
-)"
 }
