@@ -429,6 +429,10 @@ _dotfiles_build_stow() {
                 -e 's|@USE_LIB_PMDIR@|use FindBin; use lib "$FindBin::RealBin/../lib";|' \
                 "$src/$f.in" > "$dst/$f"
         done
+        # MSYS perl's File::Spec->catdir() returns undef for an empty list,
+        # so Stow warns on every link that points at a package's top-level
+        # entry — which is every link when the package is ".".
+        sed -i 's|my \$pkg_subpath = File::Spec->catdir(@dirs);|my $pkg_subpath = File::Spec->catdir(@dirs) // "";|' "$dst/lib/Stow.pm"
         chmod +x "$dst/bin/stow"
     fi
     rm -rf "$src"
