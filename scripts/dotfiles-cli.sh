@@ -44,11 +44,11 @@ cmd_install() {
         case "$1" in
             --package)
                 [ $# -ge 2 ] || { echo "Usage: dotfiles install [--package DIR] [--home DIR] <profile>... | *" >&2; exit 2; }
-                export DOTFILES_PACKAGE="$2"; shift 2
+                export DOTFILES_PACKAGE="$(dotfiles_posix_path "$2")"; shift 2
                 ;;
             --home)
                 [ $# -ge 2 ] || { echo "Usage: dotfiles install [--package DIR] [--home DIR] <profile>... | *" >&2; exit 2; }
-                export DOTFILES_HOME="$2"; shift 2
+                export DOTFILES_HOME="$(dotfiles_posix_path "$2")"; shift 2
                 ;;
             --) shift; break ;;
             -*) echo "Unknown option: $1" >&2; exit 2 ;;
@@ -87,11 +87,11 @@ cmd_package() {
         case "$1" in
             --package)
                 [ $# -ge 2 ] || { echo "Usage: dotfiles package [--package DIR] [--home DIR] <profile>..." >&2; exit 2; }
-                export DOTFILES_PACKAGE="$2"; shift 2
+                export DOTFILES_PACKAGE="$(dotfiles_posix_path "$2")"; shift 2
                 ;;
             --home)
                 [ $# -ge 2 ] || { echo "Usage: dotfiles package [--package DIR] [--home DIR] <profile>..." >&2; exit 2; }
-                export DOTFILES_HOME="$2"; shift 2
+                export DOTFILES_HOME="$(dotfiles_posix_path "$2")"; shift 2
                 ;;
             --) shift; break ;;
             -*) echo "Unknown option: $1" >&2; exit 2 ;;
@@ -121,11 +121,11 @@ cmd_upgrade() {
         case "$1" in
             --package)
                 [ $# -ge 2 ] || { echo "Usage: dotfiles upgrade [--package DIR] [--home DIR] <profile>..." >&2; exit 2; }
-                export DOTFILES_PACKAGE="$2"; shift 2
+                export DOTFILES_PACKAGE="$(dotfiles_posix_path "$2")"; shift 2
                 ;;
             --home)
                 [ $# -ge 2 ] || { echo "Usage: dotfiles upgrade [--package DIR] [--home DIR] <profile>..." >&2; exit 2; }
-                export DOTFILES_HOME="$2"; shift 2
+                export DOTFILES_HOME="$(dotfiles_posix_path "$2")"; shift 2
                 ;;
             --) shift; break ;;
             -*) echo "Unknown option: $1" >&2; exit 2 ;;

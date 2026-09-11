@@ -170,6 +170,15 @@ dotfiles_current_os() {
     esac
 }
 
+# User-supplied paths may arrive in Windows form (C:\...) from PowerShell,
+# while the framework compares against $HOME, which Git Bash reports as /c/...
+dotfiles_posix_path() {
+    case "$(dotfiles_current_os)" in
+        windows) cygpath -u "$1" ;;
+        *) printf '%s\n' "$1" ;;
+    esac
+}
+
 dotfiles_resolve_profiles() {
     local profiles=("$@")
 
@@ -315,7 +324,8 @@ dotfiles_import() {
 
     local path
     for path in "$@"; do
-        local expanded="${path/#\~/$HOME}"
+        local expanded
+        expanded=$(dotfiles_posix_path "${path/#\~/$HOME}")
         local abs=$(realpath "$expanded" 2>/dev/null) || { echo "Not found: $path" >&2; continue; }
         local rel="${abs#$HOME/}"
 
