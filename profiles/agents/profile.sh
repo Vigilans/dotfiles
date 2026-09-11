@@ -107,7 +107,7 @@ _install_skills_link() {
     mkdir -p "$source"
     local target relative
     for target in "$@"; do
-        relative=$(realpath -s --relative-to="$(dirname "$target")" "$source")
+        relative=$(realpath -sm --relative-to="$(dirname "$target")" "$source")
 
         [ -L "$target" ] && [ "$(readlink "$target")" = "$relative" ] && continue
 
@@ -139,7 +139,7 @@ _install_vendor_skills() {
     while IFS=$'\t' read -r skill source; do
         [ -d "$HOME/.agents/skills/$skill" ] && continue
         echo "[agents] installing skill $skill from $source"
-        npx -y skills add -g -y "$source" -s "$skill"
+        npx -y skills add -g -y "$source" -s "$skill" </dev/null
     done < <(jq -r '.skills | to_entries[] | "\(.key)\t\(.value.source)"' "$lock")
 }
 
@@ -197,10 +197,20 @@ _install_claude_code() {
     esac
 
     if [ "$use_clawgod" = "1" ]; then
-        (
-            set -o pipefail
-            curl -fsSL https://raw.githubusercontent.com/Vigilans/clawgod/dev/install.sh | CLAWGOD_DIR="$clawgod_dir" bash
-        ) || return 1
+        case "$(dotfiles_current_os)" in
+            linux|macos)
+                (
+                    set -o pipefail
+                    curl -fsSL https://raw.githubusercontent.com/Vigilans/clawgod/dev/install.sh | CLAWGOD_DIR="$clawgod_dir" bash
+                ) || return 1
+                ;;
+            windows)
+                # Behind a proxy the installer unpacks with `tar`; same bsdtar
+                # requirement as _install_codex.
+                CLAWGOD_DIR="$clawgod_dir" PATH="$(cygpath -u "$SYSTEMROOT")/System32:$PATH" \
+                    powershell.exe -NoProfile -Command 'irm https://raw.githubusercontent.com/Vigilans/clawgod/dev/install.ps1 | iex' || return 1
+                ;;
+        esac
         _configure_vscode_clawgod || return 1
     elif ! command -v claude &>/dev/null; then
         case "$(dotfiles_current_os)" in
@@ -351,6 +361,7 @@ _configure_vscode_clawgod() {
     case "$(dotfiles_current_os)" in
         linux) settings+=("${XDG_CONFIG_HOME:-$HOME/.config}/Code/User/settings.json") ;;
         macos) settings+=("$HOME/Library/Application Support/Code/User/settings.json") ;;
+        windows) settings+=("$(cygpath -u "$APPDATA")/Code/User/settings.json") ;;
     esac
 
     local existing=() file
@@ -359,13 +370,13 @@ _configure_vscode_clawgod() {
     done
     [ ${#existing[@]} -gt 0 ] || return 0
 
-    npx --yes -p jsonc-parser@^3 node -e "$(cat <<'JS'
+    npx --yes -p jsonc-parser@^3 node - "${existing[@]}" <<'JS'
         const path = require('path');
         const fs = require('fs');
         const npxBin = process.env.PATH.split(path.delimiter).find(p => /[\/\\]_npx[\/\\].+[\/\\]node_modules[\/\\]\.bin$/.test(p));
         const jsonc = require(require.resolve('jsonc-parser', { paths: [npxBin.replace(/[\/\\]\.bin$/, '')] }));
 
-        for (const file of process.argv.slice(1)) {
+        for (const file of process.argv.slice(2)) {
             const text = fs.readFileSync(file, 'utf8');
             const source = text.trim() ? text : '{}';
             const errors = [];
@@ -393,7 +404,6 @@ _configure_vscode_clawgod() {
             }
         }
 JS
-)" "${existing[@]}"
 }
 
 if [ "$0" = "$BASH_SOURCE" ]; then
