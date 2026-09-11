@@ -101,6 +101,14 @@ fi
 
 # Install CLI
 ln -snf "$DOTFILES_ROOT/scripts/dotfiles-cli.sh" ~/.local/bin/dotfiles
+if [ "$(dotfiles_current_os)" = "windows" ]; then
+    # PowerShell and cmd cannot run the script itself; hand it to Git's bash
+    # launcher (bin/bash.exe), which sets up the MINGW64 environment.
+    printf '@"%s" "%s" %%*\r\n' \
+        "$(cygpath -w "$(cygpath -m /)bin/bash.exe")" \
+        "$(cygpath -w "$DOTFILES_ROOT/scripts/dotfiles-cli.sh")" \
+        > ~/.local/bin/dotfiles.cmd
+fi
 
 echo "dotfiles CLI installed to ~/.local/bin/dotfiles"
 echo ""
