@@ -40,6 +40,9 @@ if [ -z "${DOTFILES_RC_LOADED:-}" ]; then
             "") export MSYS="winsymlinks:nativestrict" ;;
             *)  export MSYS="$MSYS winsymlinks:nativestrict" ;;
         esac
+        # Windows-native tools (jq, PowerShell) write CRLF; drop the CR in
+        # `read` and $(...) so their output compares and splits as LF text.
+        set -o igncr
         # GNU Stow built by _dotfiles_build_stow (no Windows package provides it)
         case ":$PATH:" in
             *":$DOTFILES_ROOT/scripts/stow/bin:"*) ;;
