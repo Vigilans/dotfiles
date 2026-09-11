@@ -581,6 +581,29 @@ dotfiles_upgrade() {
     dotfiles_run_profile "$profile_name" upgrade
 }
 
+# Install a winget package non-interactively. Its installers only extend the
+# registry PATH, so pull the new entries into this session afterwards.
+_dotfiles_winget_install() {
+    winget install -e --accept-source-agreements --accept-package-agreements --id "$1"
+    local rc=$?
+
+    local win_path
+    win_path=$(powershell.exe -NoProfile -Command \
+        '[Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [Environment]::GetEnvironmentVariable("Path", "User")' \
+        | tr -d '\r')
+    local IFS=':' dir
+    for dir in $(cygpath -p -u "$win_path"); do
+        dir="${dir%/}"
+        [ -n "$dir" ] || continue
+        case ":$PATH:" in
+            *":$dir:"*) ;;
+            *) PATH="$PATH:$dir" ;;
+        esac
+    done
+    export PATH
+    return $rc
+}
+
 dotfiles_ensure_gh() {
     command -v gh &>/dev/null && return 0
     echo "Installing GitHub CLI..."
@@ -594,6 +617,8 @@ dotfiles_ensure_gh() {
         sudo yum install -y gh
     elif command -v pacman &>/dev/null; then
         sudo pacman -S --noconfirm github-cli
+    elif command -v winget &>/dev/null; then
+        _dotfiles_winget_install GitHub.cli
     else
         echo "ERROR: cannot install gh — no supported package manager found" >&2
         return 1
@@ -649,7 +674,7 @@ dotfiles_ensure_node() {
     elif command -v apk &>/dev/null; then
         sudo apk add -q nodejs npm
     elif command -v winget &>/dev/null; then
-        winget install -e --id OpenJS.NodeJS.LTS
+        _dotfiles_winget_install OpenJS.NodeJS.LTS
     elif [ -x "${XDG_DATA_HOME:-"$HOME/.local/share"}/zinit/plugins/node/bin/node" ]; then
         local zinit_home="${XDG_DATA_HOME:-"$HOME/.local/share"}/zinit"
         local node_dir="$zinit_home/plugins/node"
