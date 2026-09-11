@@ -50,7 +50,7 @@ source "$DOTFILES_ROOT/scripts/dotfiles-rc.sh"
 
 name=myapp
 description="What this profile installs"
-supported_os=(macos)    # auto-filled by `dotfiles create`
+supported_os=(macos)    # linux, macos, windows; auto-filled by `dotfiles create`
 depends=()              # required profiles, auto-pulled into profiles to install if missing
 after=()                # order current profile after these during install
 before=()               # order current profile before these during install
@@ -86,7 +86,7 @@ The trailing conditional makes phases directly invokable while enabling
 
 | Phase | Purpose | Idempotent? |
 |---|---|---|
-| `prepare` | Install system dependencies (brew, apt, pacman) | Yes (package managers handle this) |
+| `prepare` | Install system dependencies (brew, apt, pacman; winget via `_dotfiles_winget_install` on Windows) | Yes (package managers handle this) |
 | `package` | Generate files in `DOTFILES_PACKAGE`: build artifacts, clone plugins, render `.j2` templates | Yes |
 | `install` | Resolve conflicts, then stow the selected dotfiles stow package and run setup | Yes |
 | `upgrade` | Rebuild and redeploy the selected dotfiles stow package, then update runtime components | Yes |

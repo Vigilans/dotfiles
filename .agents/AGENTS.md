@@ -16,6 +16,7 @@ dotfiles/
 │   ├── dotfiles-cli.sh                 # CLI entrypoint (executable as `dotfiles`)
 │   ├── dotfiles-lib.sh                 # Library functions (profile management, stow helpers)
 │   ├── dotfiles-rc.sh                  # Loads .env and lib, idempotent (DOTFILES_RC_LOADED guard)
+│   ├── stow/                           # GNU Stow generated from source on Windows (gitignored)
 │   ├── templates/
 │   │   └── profile.sh                  # Template for `dotfiles create`
 │   └── completions/
@@ -33,7 +34,7 @@ dotfiles/
 
 ## CLI (`dotfiles`)
 
-The `dotfiles` CLI is the primary interface. Install via `bash ./bootstrap.sh` (resolves profiles from `.env`, installs them, then symlinks CLI to `~/.local/bin/dotfiles`).
+The `dotfiles` CLI is the primary interface. Install via `bash ./bootstrap.sh` (resolves profiles from `.env`, installs them, then symlinks CLI to `~/.local/bin/dotfiles`; on Windows also writes `dotfiles.cmd` beside it).
 
 ```bash
 # Profile management
@@ -58,7 +59,7 @@ dotfiles completion <bash|zsh>          # Output completion script
 Each profile declares metadata and defines lifecycle functions:
 
 - `name`, `description`, `supported_os=(...)`, `depends=(...)`, `after=(...)`, `before=(...)`
-- `prepare()` — install upstream packages (brew, apt, pacman, github-release)
+- `prepare()` — install upstream packages (brew, apt, pacman, winget, github-release)
 - `package()` — assemble files in `dotfiles/`: download into `build/`, clone plugins, or render templates via `render_templates_<engine>` helpers
 - `install()` — `stow -v -d "$PROFILE_ROOT" -t "$HOME" dotfiles`, then start services
 - `upgrade()` — rebuild and redeploy dotfiles, update runtime components
@@ -94,6 +95,8 @@ stow --adopt -v -d "$PROFILE_ROOT" -t "$HOME" dotfiles  # import
 ```
 
 Stow creates directory-level symlinks (folding), so edits under `profiles/{name}/dotfiles/` are reflected immediately in `$HOME` — no re-stow needed. Re-stow is only required when adding a new top-level path.
+
+On Windows the framework runs under Git Bash. `dotfiles-rc.sh` exports `MSYS=winsymlinks:nativestrict` so Stow and `ln -s` create native NTFS symlinks (requires Developer Mode), and `_dotfiles_ensure_symlinks` verifies this before install, uninstall, and import.
 
 ## Working in the repo
 

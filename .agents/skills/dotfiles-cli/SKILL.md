@@ -14,6 +14,7 @@ scripts/
 ├── dotfiles-cli.sh            # CLI entrypoint (arg parsing + output)
 ├── dotfiles-lib.sh            # Library functions (all logic lives here)
 ├── dotfiles-rc.sh             # Environment loader (sources .env + lib)
+├── stow/                      # GNU Stow generated from source on Windows (gitignored)
 ├── templates/
 │   └── profile.sh             # Template for `dotfiles create`
 └── completions/
@@ -24,7 +25,7 @@ scripts/
 `bootstrap.sh` at the repo root:
 1. Parses `DOTFILES_EXTRA_PROFILES` (whitespace-tolerant `name=url` pairs) and clones each into `profiles/<name>/`. If the cloned repo isn't a framework profile (verified by `dotfiles_is_profile_dir` grep on `name=` and `supported_os=`), its contents are wrapped under `dotfiles/` and a `profile.sh` is generated from the standard template via `dotfiles_create_profile`. Detection uses grep, not source — remote code only runs at install phase. Each external profile is recorded in the local `.git/info/exclude`, so it stays out of the superproject's index and its name out of tracked files.
 2. Appends extra profile names to `DOTFILES_PROFILES`, resolves dependencies and OS filtering via `dotfiles_resolve_profiles`, installs each profile in dependency order.
-3. Symlinks the CLI to `~/.local/bin/dotfiles`.
+3. Symlinks the CLI to `~/.local/bin/dotfiles`. On Windows it also writes `~/.local/bin/dotfiles.cmd`, which runs the CLI through Git's `bin\bash.exe` launcher so PowerShell and cmd get the same MINGW64 environment as Git Bash.
 
 ## Current commands
 
@@ -55,6 +56,8 @@ Shell integration:
 `dotfiles install <profile>` runs four stages: `prepare → package → resolve conflicts → install`.
 The `package()` node here is the profile lifecycle phase; its
 output is the dotfiles stow package selected by `DOTFILES_PACKAGE`.
+
+Before any stage, the commands that rewrite `DOTFILES_HOME` (`install`, `uninstall`, `import`) run `_dotfiles_ensure_symlinks` and then `_dotfiles_ensure_stow`. The first is a no-op except on Windows, where it probes that `ln -s` produces a native symlink. The second installs Stow from the system package manager, or on Windows calls `_dotfiles_build_stow` to generate it from the GNU source tarball into `scripts/stow/`.
 
 When files in `DOTFILES_HOME` conflict with the selected dotfiles stow package,
 `_dotfiles_resolve_conflicts` prompts per file:
@@ -107,6 +110,7 @@ multiple profiles.
 2. Sources `.env` with `set -a` (skips if `.env` doesn't exist — repo ships `.env.example`)
 3. Restores the caller's exported values over the channel, keeping the `PATH` that `.env` composed
 4. Sources `dotfiles-lib.sh`
+5. On Windows, exports `MSYS=winsymlinks:nativestrict` and prepends `scripts/stow/bin` to `PATH`
 
 All profiles also source this file, so lib functions are always available inside lifecycle functions.
 
@@ -144,6 +148,9 @@ back to the dotfiles stow package destination.
 - **Metadata reading**: use `dotfiles_load_profile <name>` which sources in a subshell with `set +u` and emits tab-separated fields. Returns non-zero if profile has no `name` variable.
 - **Status checking**: `dotfiles_profile_status <name>` returns one of: `installed`, `not installed`, `partial`, `no dotfiles`. It recursively compares the selected dotfiles stow package with the configured home and handles Stow directory folding.
 - **Profile resolution**: `dotfiles_resolve_profiles [profile...]` takes profile names (or discovers all if none given), filters by current OS, and returns a topologically sorted list. It auto-includes dependencies unless `DOTFILES_SKIP_DEPENDENCIES=1`. Used by `bootstrap.sh`; caller is responsible for parsing `DOTFILES_PROFILES` from `.env`.
+- **OS detection**: `dotfiles_current_os` returns `macos`, `linux`, or `windows` (Git Bash / MSYS2).
+- **User-supplied paths**: pass through `dotfiles_posix_path` before comparing with `$HOME`; on Windows it converts `C:\...` to `/c/...`. The CLI does this for `--home`, `--package`, and `import` arguments.
+- **Windows packages**: install with `_dotfiles_winget_install <id>`; it runs winget unattended and pulls the registry `PATH` into the session so the binary is usable in the same run.
 - **Errors**: print to stderr and `return 1`. The CLI translates non-zero returns to appropriate exit codes.
 
 ### CLI
