@@ -429,6 +429,9 @@ _dotfiles_build_stow() {
                 -e 's|@USE_LIB_PMDIR@|use FindBin; use lib "$FindBin::RealBin/../lib";|' \
                 "$src/$f.in" > "$dst/$f"
         done
+        # Stow reads its default ignore list from Stow.pm's __DATA__ section,
+        # which the Makefile fills by appending default-ignore-list.
+        cat "$src/default-ignore-list" >> "$dst/lib/Stow.pm"
         # MSYS perl's File::Spec->catdir() returns undef for an empty list,
         # so Stow warns on every link that points at a package's top-level
         # entry — which is every link when the package is ".".
