@@ -201,13 +201,13 @@ _install_claude_code() {
             linux|macos)
                 (
                     set -o pipefail
-                    curl -fsSL https://raw.githubusercontent.com/Vigilans/clawgod/dev/install.sh | CLAWGOD_DIR="$clawgod_dir" bash
+                    curl -fsSL https://raw.githubusercontent.com/Vigilans/clawgod/dev/install.sh | CLAWGOD_DIR="$clawgod_dir" CLAWGOD_LEAN_OFF=1 bash
                 ) || return 1
                 ;;
             windows)
                 # Behind a proxy the installer unpacks with `tar`; same bsdtar
                 # requirement as _install_codex.
-                CLAWGOD_DIR="$clawgod_dir" PATH="$(cygpath -u "$SYSTEMROOT")/System32:$PATH" \
+                CLAWGOD_DIR="$clawgod_dir" CLAWGOD_LEAN_OFF=1 PATH="$(cygpath -u "$SYSTEMROOT")/System32:$PATH" \
                     powershell.exe -NoProfile -Command 'irm https://raw.githubusercontent.com/Vigilans/clawgod/dev/install.ps1 | iex' || return 1
                 ;;
         esac
