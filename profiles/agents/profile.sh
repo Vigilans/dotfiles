@@ -36,7 +36,8 @@ prepare() {
         elif command -v apk &>/dev/null; then
             sudo apk add -q jq ripgrep
         elif command -v winget &>/dev/null; then
-            winget install -e --id jqlang.jq --id BurntSushi.ripgrep.MSVC
+            _dotfiles_winget_install jqlang.jq
+            _dotfiles_winget_install BurntSushi.ripgrep.MSVC
         else
             echo "[agents] No supported package manager found" >&2
             return 1
@@ -152,6 +153,13 @@ _install_codex() {
                     PATH="${CODEX_INSTALL_DIR:-$HOME/.local/bin}:$PATH" sh
             )
             ;;
+        windows)
+            # The installer unpacks with `tar`; it must resolve to Windows'
+            # bsdtar, since Git's GNU tar reads `C:\...` as a remote host.
+            CODEX_NON_INTERACTIVE=1 PATH="$(cygpath -u "$SYSTEMROOT")/System32:$PATH" \
+                powershell.exe -NoProfile -Command 'irm https://chatgpt.com/codex/install.ps1 | iex' || return 1
+            export PATH="${CODEX_INSTALL_DIR:-$(cygpath -u "$LOCALAPPDATA")/Programs/OpenAI/Codex/bin}:$PATH"
+            ;;
     esac
 }
 
@@ -201,6 +209,9 @@ _install_claude_code() {
                     set -o pipefail
                     curl -fsSL https://claude.ai/install.sh | bash
                 ) || return 1
+                ;;
+            windows)
+                powershell.exe -NoProfile -Command 'irm https://claude.ai/install.ps1 | iex' || return 1
                 ;;
         esac
         export PATH="$HOME/.local/bin:$PATH"
