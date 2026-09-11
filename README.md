@@ -22,6 +22,20 @@ For shell completion:
 eval "$(dotfiles completion zsh)"   # or bash
 ```
 
+### Windows Support
+
+The framework runs under Git Bash from
+[Git for Windows](https://gitforwindows.org/). Requirements:
+
+- **Developer Mode** enabled (Settings → System → For developers), so that
+  Stow can create symlinks without elevation.
+- `bash ./bootstrap.sh` run from a Git Bash window. In PowerShell, `bash`
+  is normally WSL's launcher or Git's bare MSYS shell, not Git Bash.
+
+After bootstrap, `dotfiles` is also available from PowerShell and cmd
+through `~/.local/bin/dotfiles.cmd`. Missing tools are installed with
+`winget`.
+
 ## CLI
 
 ```
