@@ -31,5 +31,16 @@ if [ -z "${DOTFILES_RC_LOADED:-}" ]; then
     # Load helper library
     source "$DOTFILES_ROOT/scripts/dotfiles-lib.sh"
 
+    # Git Bash (MSYS2) copies symlink targets by default; force native NTFS
+    # symlinks so stow links and `ln -s` are real links visible to Windows apps.
+    # nativestrict fails loudly instead of degrading to a copy.
+    if [ "$(dotfiles_current_os)" = "windows" ]; then
+        case "${MSYS:-}" in
+            *winsymlinks*) ;;
+            "") export MSYS="winsymlinks:nativestrict" ;;
+            *)  export MSYS="$MSYS winsymlinks:nativestrict" ;;
+        esac
+    fi
+
     DOTFILES_RC_LOADED=1
 fi

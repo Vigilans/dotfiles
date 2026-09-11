@@ -310,6 +310,7 @@ dotfiles_import() {
     local profile_dir
     profile_dir=$(dotfiles_profile_dir "$profile_name") || { echo "Profile '$profile_name' does not exist. Run 'dotfiles create $profile_name' first." >&2; return 1; }
 
+    _dotfiles_ensure_symlinks || return 1
     _dotfiles_ensure_stow || return 1
 
     local path
@@ -359,9 +360,27 @@ dotfiles_uninstall() {
         return 1
     fi
 
+    _dotfiles_ensure_symlinks || return 1
     _dotfiles_ensure_stow || return 1
 
     dotfiles_run_profile "$profile_name" uninstall
+}
+
+_dotfiles_ensure_symlinks() {
+    case "$(dotfiles_current_os)" in
+        windows) ;;
+        *) return 0 ;;
+    esac
+
+    local probe rc=0
+    probe=$(mktemp -d)
+    touch "$probe/target"
+    if ! { ln -s target "$probe/link" && [ -L "$probe/link" ]; } 2>/dev/null; then
+        echo "ERROR: cannot create native symlinks — enable Windows Developer Mode (Settings > System > For developers) or run from an elevated shell" >&2
+        rc=1
+    fi
+    rm -rf "$probe"
+    return $rc
 }
 
 _dotfiles_ensure_stow() {
@@ -473,6 +492,7 @@ dotfiles_install() {
         return 1
     fi
 
+    _dotfiles_ensure_symlinks || return 1
     _dotfiles_ensure_stow || return 1
 
     dotfiles_run_profile "$profile_name" '
