@@ -40,6 +40,11 @@ if [ -z "${DOTFILES_RC_LOADED:-}" ]; then
             "") export MSYS="winsymlinks:nativestrict" ;;
             *)  export MSYS="$MSYS winsymlinks:nativestrict" ;;
         esac
+        # GNU Stow built by _dotfiles_build_stow (no Windows package provides it)
+        case ":$PATH:" in
+            *":$DOTFILES_ROOT/scripts/stow/bin:"*) ;;
+            *) export PATH="$DOTFILES_ROOT/scripts/stow/bin:$PATH" ;;
+        esac
     fi
 
     DOTFILES_RC_LOADED=1

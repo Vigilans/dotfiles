@@ -6,3 +6,4 @@ tmp/
 profiles/local/
 .agents/skills/*
 !.agents/skills/dotfiles-*/
+scripts/stow/

@@ -392,10 +392,37 @@ _dotfiles_ensure_stow() {
         sudo apt install -y stow
     elif command -v pacman &>/dev/null; then
         sudo pacman -S --noconfirm stow
+    elif [ "$(dotfiles_current_os)" = "windows" ]; then
+        _dotfiles_build_stow
     else
         echo "ERROR: cannot install stow — no supported package manager found" >&2
         return 1
     fi
+}
+
+# Stow is pure Perl and Git Bash ships perl, so generate it from the GNU
+# source tarball into scripts/stow (gitignored; bin/ is on PATH via
+# dotfiles-rc.sh). Keep the bin/ and lib/ split: NTFS is case-insensitive,
+# so bin/stow and lib/Stow/ cannot share a directory.
+_dotfiles_build_stow() {
+    local version=2.4.1
+    local dst="$DOTFILES_ROOT/scripts/stow"
+    local src
+    src=$(mktemp -d)
+
+    if curl -fsSL "https://ftp.gnu.org/gnu/stow/stow-$version.tar.gz" | tar -xz -C "$src" --strip-components=1; then
+        mkdir -p "$dst/bin" "$dst/lib/Stow"
+        local f
+        for f in bin/stow lib/Stow.pm lib/Stow/Util.pm; do
+            sed -e 's|@PERL@|/usr/bin/perl|' \
+                -e "s|@VERSION@|$version|" \
+                -e 's|@USE_LIB_PMDIR@|use FindBin; use lib "$FindBin::RealBin/../lib";|' \
+                "$src/$f.in" > "$dst/$f"
+        done
+        chmod +x "$dst/bin/stow"
+    fi
+    rm -rf "$src"
+    command -v stow &>/dev/null
 }
 
 _dotfiles_stow_conflicts() {
