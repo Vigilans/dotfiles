@@ -62,7 +62,7 @@
       os.environ[app + "_REASONING_EFFORT"] or os.environ[shared + "_REASONING_EFFORT"],
       defaults.effort)) %}
 {%- if model.effort and (not model.model or ["inherit", "default"].includes(model.model))
-      and (client == "OPENCODE" or (client == "CLAUDE_CODE" and AGENTS_MODEL_SUPPORTS_EFFORT_SUFFIX == "true")) %}
+      and client == "CLAUDE_CODE" and AGENTS_MODEL_SUPPORTS_EFFORT_SUFFIX == "true" %}
 {%-   set _ = fail(relative_path + ": effort requires a concrete model; set " + app + "_MODEL or " + shared + "_MODEL") %}
 {%- endif %}
 {%- set description = description | trim %}
