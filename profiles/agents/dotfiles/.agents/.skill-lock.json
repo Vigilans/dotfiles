@@ -36,6 +36,16 @@
       "skillFolderHash": "db0b775af7e7d603f59fa2b67bdef615baf1a48f",
       "installedAt": "2026-09-08T05:55:30.396Z",
       "updatedAt": "2026-09-09T07:55:10.402Z"
+    },
+    "handoff": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/mattpocock/skills.git",
+      "ref": "main",
+      "skillPath": "skills/productivity/handoff/SKILL.md",
+      "skillFolderHash": "2242e8f05424b8c2ae94194a90d97b88d16108ec",
+      "installedAt": "2026-09-13T04:12:31.993Z",
+      "updatedAt": "2026-09-13T04:12:31.993Z"
     }
   },
   "dismissed": {
