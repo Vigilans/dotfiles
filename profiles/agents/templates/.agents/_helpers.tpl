@@ -1,4 +1,4 @@
-{% macro resolve_model(selector, effort="", default_effort="") -%}
+{% macro resolve_model(selector, effort, default_effort="") -%}
 {%- set selector = selector or "" %}
 {%- set alias = selector.toUpperCase() %}
 {%- set registered = os.environ["AGENTS_" + alias + "_MODEL"] if not alias.startsWith("SUBAGENT_") else "" %}
@@ -15,7 +15,10 @@
 {%-     endif %}
 {%-   endfor %}
 {%- endif %}
-{{- {"model": model, "effort": effort or alias_effort or encoded_effort or default_effort or "", "long_context": long_context} | dump -}}
+{#- An effort passed by the caller, even empty, is final; otherwise the alias,
+    the model suffix, and the caller's default are tried in turn. -#}
+{%- set effort = effort if effort is defined else (alias_effort or encoded_effort or default_effort or "") %}
+{{- {"model": model, "effort": effort, "long_context": long_context} | dump -}}
 {%- endmacro %}
 
 {% macro claude_model(resolved) -%}
@@ -60,7 +63,8 @@
 {%- set model = json.parse(resolve_model(
       os.environ[app + "_MODEL"] if (app + "_MODEL") in os.environ
         else (os.environ[shared + "_MODEL"] if (shared + "_MODEL") in os.environ else defaults.model),
-      os.environ[app + "_REASONING_EFFORT"] or os.environ[shared + "_REASONING_EFFORT"],
+      os.environ[app + "_REASONING_EFFORT"] if (app + "_REASONING_EFFORT") in os.environ
+        else os.environ[shared + "_REASONING_EFFORT"],
       defaults.effort)) %}
 {%- if model.effort and (not model.model or ["inherit", "default"].includes(model.model))
       and client == "CLAUDE_CODE" and AGENTS_MODEL_SUPPORTS_EFFORT_SUFFIX == "true" %}
