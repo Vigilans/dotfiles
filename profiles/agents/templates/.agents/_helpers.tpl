@@ -58,7 +58,8 @@
 {%- set shared = "AGENTS_SUBAGENT_" + role %}
 {%- set defaults = defaults["CLAUDE_CODE" if client == "OPENCODE" else client] or {} %}
 {%- set model = json.parse(resolve_model(
-      os.environ[app + "_MODEL"] or os.environ[shared + "_MODEL"] or defaults.model,
+      os.environ[app + "_MODEL"] if (app + "_MODEL") in os.environ
+        else (os.environ[shared + "_MODEL"] if (shared + "_MODEL") in os.environ else defaults.model),
       os.environ[app + "_REASONING_EFFORT"] or os.environ[shared + "_REASONING_EFFORT"],
       defaults.effort)) %}
 {%- if model.effort and (not model.model or ["inherit", "default"].includes(model.model))
