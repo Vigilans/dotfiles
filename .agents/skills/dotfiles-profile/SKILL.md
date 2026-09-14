@@ -79,8 +79,7 @@ if [ "$0" = "$BASH_SOURCE" ]; then
 }
 ```
 
-The trailing conditional makes phases directly invokable while enabling
-`errexit` only for direct execution. Framework sourcing does not inherit it.
+The trailing conditional makes phases directly invokable while enabling `errexit` only for direct execution. Framework sourcing does not inherit it.
 
 ### Phase semantics
 
@@ -94,9 +93,7 @@ The trailing conditional makes phases directly invokable while enabling
 
 ## Dotfiles stow package paths
 
-`$PROFILE_ROOT/dotfiles` is always the canonical source. `DOTFILES_PACKAGE`
-is the assembled dotfiles stow package used by generation, status, conflict
-resolution, Stow, and unstow. `DOTFILES_HOME` is the Stow destination.
+`$PROFILE_ROOT/dotfiles` is always the canonical source. `DOTFILES_PACKAGE` is the assembled dotfiles stow package used by generation, status, conflict resolution, Stow, and unstow. `DOTFILES_HOME` is the Stow destination.
 
 Precedence is CLI option, environment variable, then profile default:
 
@@ -106,19 +103,11 @@ dotfiles install [--package DIR] [--home DIR] PROFILE...
 dotfiles upgrade [--package DIR] [--home DIR] PROFILE...
 ```
 
-When `DOTFILES_PACKAGE` is selected through the environment or `--package`,
-`dotfiles package` overlays canonical static files into that external dotfiles
-stow package. Install and upgrade use it as-is; run `dotfiles package` first
-after static source changes. A selected external dotfiles stow package accepts
-one profile and install does not add its dependencies; `--home` may apply to
-multiple profiles.
+When `DOTFILES_PACKAGE` is selected through the environment or `--package`, `dotfiles package` overlays canonical static files into that external dotfiles stow package. Install and upgrade use it as-is; run `dotfiles package` first after static source changes. A selected external dotfiles stow package accepts one profile and install does not add its dependencies; `--home` may apply to multiple profiles.
 
-The external overlay copies files and symlinks recursively, excludes `.git`,
-and does not delete unmanaged destination files.
+The external overlay copies files and symlinks recursively, excludes `.git`, and does not delete unmanaged destination files.
 
-Render generated files into `DOTFILES_PACKAGE`. The Codex template reads
-runtime-managed configuration from `DOTFILES_HOME` first and falls back to the
-dotfiles stow package destination.
+Render generated files into `DOTFILES_PACKAGE`. The Codex template reads runtime-managed configuration from `DOTFILES_HOME` first and falls back to the dotfiles stow package destination.
 
 ## Stow conventions
 

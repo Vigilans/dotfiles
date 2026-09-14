@@ -54,9 +54,7 @@ export DOTFILES_PACKAGE="${DOTFILES_PACKAGE:-$PROFILE_ROOT/dotfiles}"
 export DOTFILES_HOME="${DOTFILES_HOME:-$HOME}"
 ```
 
-`DOTFILES_PACKAGE` is the assembled stow package; `$PROFILE_ROOT/dotfiles`
-remains its canonical source. `DOTFILES_HOME` is the stow destination. CLI
-flags override environment values, which override these defaults.
+`DOTFILES_PACKAGE` is the assembled stow package; `$PROFILE_ROOT/dotfiles` remains its canonical source. `DOTFILES_HOME` is the stow destination. CLI flags override environment values, which override these defaults.
 
 An explicit package path is limited to one profile:
 
@@ -66,10 +64,7 @@ dotfiles install --package /path/to/package --home /path/to/home profile
 dotfiles upgrade --package /path/to/package --home /path/to/home profile
 ```
 
-When `DOTFILES_PACKAGE` is selected through the environment or `--package`, the
-`package` command copies canonical files and symlinks there, excluding `.git`,
-before running the profile's `package()` phase. Install and upgrade use the
-selected dotfiles stow package as-is; install does not add profile dependencies.
+When `DOTFILES_PACKAGE` is selected through the environment or `--package`, the `package` command copies canonical files and symlinks there, excluding `.git`, before running the profile's `package()` phase. Install and upgrade use the selected dotfiles stow package as-is; install does not add profile dependencies.
 
 ## Coordination between profiles
 
@@ -122,8 +117,7 @@ stow --adopt -v -d "$PROFILE_ROOT" -t "$HOME" dotfiles  # import
 
 Edits to files inside an already-stowed directory show up in `$HOME` automatically (stow folds at the directory level). Adding a new top-level path requires re-stow.
 
-`dotfiles install` resolves conflicts between `$DOTFILES_PACKAGE` and
-`$DOTFILES_HOME` before the profile's `install()` runs:
+`dotfiles install` resolves conflicts between `$DOTFILES_PACKAGE` and `$DOTFILES_HOME` before the profile's `install()` runs:
 
 - `[d]iff` — preview differences with `git diff --no-index` (repeatable)
 - `[b]ackup` — move HOME file to `$DOTFILES_ROOT/.backups/<profile>-<timestamp>/`

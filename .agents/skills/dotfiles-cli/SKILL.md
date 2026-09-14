@@ -53,14 +53,11 @@ Shell integration:
 
 ## Install flow & conflict resolution
 
-`dotfiles install <profile>` runs four stages: `prepare → package → resolve conflicts → install`.
-The `package()` node here is the profile lifecycle phase; its
-output is the dotfiles stow package selected by `DOTFILES_PACKAGE`.
+`dotfiles install <profile>` runs four stages: `prepare → package → resolve conflicts → install`. The `package()` node here is the profile lifecycle phase; its output is the dotfiles stow package selected by `DOTFILES_PACKAGE`.
 
 Before any stage, the commands that rewrite `DOTFILES_HOME` (`install`, `uninstall`, `import`) run `_dotfiles_ensure_symlinks` and then `_dotfiles_ensure_stow`. The first is a no-op except on Windows, where it probes that `ln -s` produces a native symlink. The second installs Stow from the system package manager, or on Windows calls `_dotfiles_build_stow` to generate it from the GNU source tarball into `scripts/stow/`.
 
-When files in `DOTFILES_HOME` conflict with the selected dotfiles stow package,
-`_dotfiles_resolve_conflicts` prompts per file:
+When files in `DOTFILES_HOME` conflict with the selected dotfiles stow package, `_dotfiles_resolve_conflicts` prompts per file:
 
 - `[d]iff` — preview with `git diff --no-index` (repeatable, returns to prompt)
 - `[b]ackup` — move HOME file to `$DOTFILES_ROOT/.backups/<profile>-<timestamp>/`
@@ -88,20 +85,11 @@ DOTFILES_HOME=${DOTFILES_HOME:-$HOME}
 
 CLI options are exported as these variables before lifecycle functions run.
 
-`DOTFILES_PACKAGE` names the assembled dotfiles stow package;
-`$PROFILE_ROOT/dotfiles` remains its canonical source. `DOTFILES_HOME` names
-the stow destination.
+`DOTFILES_PACKAGE` names the assembled dotfiles stow package; `$PROFILE_ROOT/dotfiles` remains its canonical source. `DOTFILES_HOME` names the stow destination.
 
-Running `dotfiles package` with `DOTFILES_PACKAGE` selected through the
-environment or `--package` overlays canonical static files into that external
-dotfiles stow package. It copies files and symlinks recursively, excludes
-`.git`, and does not delete unmanaged destination files. Install and upgrade
-never perform this overlay; an explicitly selected external dotfiles stow
-package must already be assembled.
+Running `dotfiles package` with `DOTFILES_PACKAGE` selected through the environment or `--package` overlays canonical static files into that external dotfiles stow package. It copies files and symlinks recursively, excludes `.git`, and does not delete unmanaged destination files. Install and upgrade never perform this overlay; an explicitly selected external dotfiles stow package must already be assembled.
 
-A selected external dotfiles stow package accepts exactly one profile. Install
-keeps that profile without adding its dependencies. `--home` may be used with
-multiple profiles.
+A selected external dotfiles stow package accepts exactly one profile. Install keeps that profile without adding its dependencies. `--home` may be used with multiple profiles.
 
 ## Environment loading
 
@@ -126,8 +114,7 @@ Profiles live in two places:
 
 `scripts/templates/profile.sh` contains `__NAME__`, `__DESCRIPTION__`, `__OS__` placeholders. `dotfiles_create_profile` replaces them via `sed` and auto-detects the current OS via `dotfiles_current_os`.
 
-Profile templates may read runtime-managed state from `DOTFILES_HOME` and fall
-back to the dotfiles stow package destination.
+Profile templates may read runtime-managed state from `DOTFILES_HOME` and fall back to the dotfiles stow package destination.
 
 ## Adding a new command
 
