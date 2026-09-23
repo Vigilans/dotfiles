@@ -135,7 +135,7 @@ the visual content could not be inspected.
 {%-     set slug = model.slice(0, -4) if long_context else model %}
 {%-     set description = os.environ["AGENTS_" + alias + "_MODEL_DESCRIPTION"] %}
 {%-     set effort = os.environ["AGENTS_" + alias + "_REASONING_EFFORT"] %}
-{%-     set vision = os.environ["AGENTS_" + alias + "_MODEL_VISION"] %}
+{%-     set modalities = os.environ["AGENTS_" + alias + "_MODEL_MODALITIES"] %}
 {%-     if effort and not efforts.includes(effort) %}
 {%-       set _ = fail("AGENTS_" + alias + "_REASONING_EFFORT must be one of " + efforts.join(", ")) %}
 {%-     endif %}
@@ -154,7 +154,7 @@ the visual content could not be inspected.
           "long_context": long_context,
           "description": (seen.description if seen else "") or description,
           "effort": (seen.effort if seen else "") or effort,
-          "vision": (seen.vision if seen else "") or vision
+          "modalities": (seen.modalities if seen else "") or modalities
         }) %}
 {%-   endif %}
 {%- endfor %}
@@ -224,7 +224,10 @@ the visual content could not be inspected.
 {%-   set model = json.merge(model, "additional_speed_tiers", []) %}
 {%-   set model = json.merge(model, "priority", loop.index) %}
 {%-   set model = json.merge(model, "multi_agent_version", multi_agent_version) %}
-{%-   if entry.vision == "false" %}
+{%-   set modalities = (entry.modalities or "text,image").split(",") %}
+{%-   set model = json.merge(model, "input_modalities",
+        modalities if modalities.includes("image") else modalities.concat("image")) %}
+{%-   if not modalities.includes("image") %}
 {%-     set model = json.merge(model, "base_instructions",
           (model.base_instructions or model.model_messages.instructions_template) + vision_delegation) %}
 {%-     set model = json.merge(model, "model_messages", json.merge(model.model_messages,

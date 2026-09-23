@@ -49,7 +49,7 @@
           "long_context": long_context,
           "description": (seen.description if seen else "") or os.environ["AGENTS_" + alias + "_MODEL_DESCRIPTION"] or alias,
           "effort": effort,
-          "vision": (seen.vision if seen else "") or os.environ["AGENTS_" + alias + "_MODEL_VISION"]
+          "modalities": (seen.modalities if seen else "") or os.environ["AGENTS_" + alias + "_MODEL_MODALITIES"]
         }) %}
 {%-   endif %}
 {%- endfor %}
@@ -73,14 +73,16 @@
         {%- for slug in slugs %}
         {%-   set entry = collected[slug] %}
         {%-   set gpt = slug.startsWith("gpt-") %}
+        {#-   Audio is left out: /v1/messages has no audio block. -#}
+        {%-   set image = (entry.modalities or "text,image").split(",").includes("image") %}
         "{{ slug }}": {
           "name": "{{ entry.description }}",
-          "attachment": {{ "false" if entry.vision == "false" else "true" }},
+          "attachment": {{ "true" if image else "false" }},
           {#- Declaring a reasoning model is what makes opencode derive its
               effort variants; the ladder itself comes from the model family. -#}
           "reasoning": {{ "true" if entry.effort else "false" }},
           "modalities": {
-            "input": [{{ '"text"' if entry.vision == "false" else '"text", "image"' }}],
+            "input": [{{ '"text", "image"' if image else '"text"' }}],
             "output": ["text"]
           },
           "limit": {
