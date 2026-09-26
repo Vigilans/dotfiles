@@ -24,18 +24,18 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/obra/superpowers.git",
       "skillPath": "skills/writing-skills/SKILL.md",
-      "skillFolderHash": "1768f7552ec98fc6b06aeea747a0c4ef6bde0473",
+      "skillFolderHash": "f761162236b19330da62b22ad0da20f5dac7c6ab",
       "installedAt": "2026-07-23T14:44:16.483Z",
-      "updatedAt": "2026-09-11T09:48:16.796Z"
+      "updatedAt": "2026-09-23T15:45:18.965Z"
     },
     "defuddle": {
       "source": "kepano/obsidian-skills",
       "sourceType": "github",
       "sourceUrl": "https://github.com/kepano/obsidian-skills.git",
       "skillPath": "skills/defuddle/SKILL.md",
-      "skillFolderHash": "db0b775af7e7d603f59fa2b67bdef615baf1a48f",
+      "skillFolderHash": "72c1262fcb7abd3b846032d12dd8adefeb7da569",
       "installedAt": "2026-09-08T05:55:30.396Z",
-      "updatedAt": "2026-09-11T09:48:20.313Z"
+      "updatedAt": "2026-09-23T15:45:21.920Z"
     },
     "handoff": {
       "source": "mattpocock/skills",
