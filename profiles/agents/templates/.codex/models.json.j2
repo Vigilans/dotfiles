@@ -2,6 +2,7 @@
     catalog. Codex requires a full ModelInfo per entry — including the base
     instructions prompt — so entries use their native bundled definitions,
     with Sol as the fallback and local compatibility overrides applied below. -#}
+{%- from ".agents/_helpers.tpl" import resolve_model with context %}
 {%- set prototype = fs.readFile(PROFILE_ROOT + "/build/codex-models.json") %}
 {%- if not prototype %}
 {%-   set _ = fail("missing build/codex-models.json — run the profile's package phase") %}
@@ -158,8 +159,9 @@ For audio or video analysis, find and use the `multimodal` subagent. Its descrip
 {%- for alias in ordered %}
 {%-   set model = os.environ["AGENTS_" + alias + "_MODEL"] %}
 {%-   if model %}
-{%-     set long_context = model.endsWith("[1m]") %}
-{%-     set slug = model.slice(0, -4) if long_context else model %}
+{%-     set resolved = json.parse(resolve_model(alias)) %}
+{%-     set long_context = resolved.long_context %}
+{%-     set slug = resolved.model %}
 {%-     set description = os.environ["AGENTS_" + alias + "_MODEL_DESCRIPTION"] %}
 {%-     set effort = os.environ["AGENTS_" + alias + "_REASONING_EFFORT"] %}
 {%-     set modalities = os.environ["AGENTS_" + alias + "_MODEL_MODALITIES"] %}
@@ -193,6 +195,23 @@ For audio or video analysis, find and use the `multimodal` subagent. Its descrip
 {%-   endif %}
 {%- endfor %}
 {%- set default_review_model = review_candidates[0] if review_candidates.length == 1 else null %}
+{%- set visible_slugs = slugs.slice() %}
+{%- for key, selector in os.environ %}
+{%-   if key.endsWith("_MODEL") and (key.startsWith("CODEX_SUBAGENT_")
+        or (key.startsWith("AGENTS_SUBAGENT_") and not ("CODEX_" + key.slice(7)) in os.environ)) %}
+{%-     set resolved = json.parse(resolve_model(selector)) %}
+{%-     if resolved.model and not ["inherit", "default"].includes(resolved.model) and not collected[resolved.model] %}
+{%-       set alias = selector.toUpperCase() %}
+{%-       set _ = slugs.push(resolved.model) %}
+{%-       set collected = json.merge(collected, resolved.model, {
+            "long_context": resolved.long_context,
+            "description": os.environ["AGENTS_" + alias + "_MODEL_DESCRIPTION"],
+            "effort": resolved.effort,
+            "modalities": os.environ["AGENTS_" + alias + "_MODEL_MODALITIES"]
+          }) %}
+{%-     endif %}
+{%-   endif %}
+{%- endfor %}
 {%- set models = [] %}
 {%- for slug in slugs %}
 {%-   set entry = collected[slug] %}
@@ -238,7 +257,7 @@ For audio or video analysis, find and use the `multimodal` subagent. Its descrip
 {%-     set model = json.merge(model, "effective_context_window_percent", 100) %}
 {%-     set model = json.merge(model, "auto_compact_token_limit", AGENTS_AUTO_COMPACT_LIMIT_1M | int) %}
 {%-   endif %}
-{%-   set model = json.merge(model, "visibility", "list") %}
+{%-   set model = json.merge(model, "visibility", "list" if visible_slugs.includes(slug) else "hide") %}
 {%-   set model = json.merge(model, "supported_in_api", true) %}
 {#-   Responses Lite is OpenAI's private wire variant: it moves `tools` and
       `instructions` into the input array, which leaves no top-level slot for
