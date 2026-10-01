@@ -24,6 +24,7 @@ Endpoint and models are declared once, in a tool-agnostic schema this profile ow
 | `AGENTS_<ALIAS>_REASONING_EFFORT` | Default effort for the model: `minimal`, `low`, `medium`, `high`, `xhigh`, or `max`. |
 | `AGENTS_<ALIAS>_MODEL_MODALITIES` | Comma-separated input modalities the model accepts: `text`, `image`, `audio`. Defaults to `text,image`. Without `image`, the model's Codex prompt carries a rule to delegate visual inspection to the `vision` sub-agent. With `audio`, Codex sends recordings and `audio()` tool output to the model. |
 | `AGENTS_MODEL_SUPPORTS_EFFORT_SUFFIX` | Set to `true` for gateways that select effort through the model name rather than a request parameter. |
+| `AGENTS_AUTO_COMPACT_LIMIT_1M` | Auto-compaction token budget for long-context models, shared by Codex, Claude Code, and OpenCode. |
 | `AGENTS_SUBAGENT_<ROLE>_MODEL` | Shared subagent model: a registered alias or a concrete model ID. |
 | `AGENTS_SUBAGENT_<ROLE>_REASONING_EFFORT` | Shared subagent effort override. |
 | `<CLIENT>_SUBAGENT_<ID>_MODEL` | Client-specific model override; clients are `CODEX`, `CLAUDE_CODE`, and `OPENCODE`. |
@@ -32,7 +33,6 @@ Endpoint and models are declared once, in a tool-agnostic schema this profile ow
 | `AGENTS_CLAUDE_CODE_ENABLED_MODELS` | Comma-separated model aliases enabled for Claude Code. Matching is case-insensitive; all registered aliases are enabled when unset. |
 | `AGENTS_CODEX_CHATGPT_LOGIN` | Set to `true` to require a Codex ChatGPT/API-key login while keeping the gateway credential provider-scoped. |
 | `AGENTS_CODEX_ENABLED_MODELS` | Comma-separated model aliases enabled for Codex. Matching is case-insensitive; all registered aliases are enabled when unset. |
-| `AGENTS_CODEX_AUTO_COMPACT_LIMIT_1M` | Auto-compact token limit for Codex models marked `[1m]`. |
 | `AGENTS_CODEX_AUTO_REVIEW_MODEL_OVERRIDE` | Approval-review model ID. When unset, preserves the upstream override or uses the sole enabled model with an upstream review policy. |
 | `AGENTS_CODEX_MULTI_AGENT_VERSION` | Codex multi-agent backend: `v1` or `v2`, defaulting to `v2`. Sets both the catalog's per-model version and the matching feature flag. |
 | `AGENTS_OPENCODE_ENABLED_MODELS` | Comma-separated model aliases enabled for opencode. Matching is case-insensitive; all registered aliases are enabled when unset. |

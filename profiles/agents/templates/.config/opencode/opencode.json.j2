@@ -87,6 +87,10 @@
           },
           "limit": {
             "context": {{ 1000000 if entry.long_context else 272000 }},
+            {%- if entry.long_context and AGENTS_AUTO_COMPACT_LIMIT_1M %}
+            {#- OpenCode subtracts its default 20k compaction buffer from limit.input. -#}
+            "input": {{ (AGENTS_AUTO_COMPACT_LIMIT_1M | int) + 20000 }},
+            {%- endif %}
             "output": 32768
           }
           {#- Declared variants merge into the ladder opencode derives from the

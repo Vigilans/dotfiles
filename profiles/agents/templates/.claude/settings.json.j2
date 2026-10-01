@@ -80,6 +80,9 @@
   "model": "{{ ANTHROPIC_MODEL }}",
   {%- endif %}
   "effortLevel": "max",
+  {%- if AGENTS_AUTO_COMPACT_LIMIT_1M %}
+  "autoCompactWindow": {{ AGENTS_AUTO_COMPACT_LIMIT_1M | int }},
+  {%- endif %}
   "cleanupPeriodDays": 90,
   "showThinkingSummaries": true,
   "skipDangerousModePermissionPrompt": true,

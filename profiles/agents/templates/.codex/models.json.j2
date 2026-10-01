@@ -207,9 +207,9 @@ the visual content could not be inspected.
 {%-     set model = json.merge(model, "context_window", 1000000) %}
 {%-     set model = json.merge(model, "max_context_window", 1000000) %}
 {%-   endif %}
-{%-   if entry.long_context and AGENTS_CODEX_AUTO_COMPACT_LIMIT_1M %}
+{%-   if entry.long_context and AGENTS_AUTO_COMPACT_LIMIT_1M %}
 {%-     set model = json.merge(model, "effective_context_window_percent", 100) %}
-{%-     set model = json.merge(model, "auto_compact_token_limit", AGENTS_CODEX_AUTO_COMPACT_LIMIT_1M | int) %}
+{%-     set model = json.merge(model, "auto_compact_token_limit", AGENTS_AUTO_COMPACT_LIMIT_1M | int) %}
 {%-   endif %}
 {%-   set model = json.merge(model, "visibility", "list") %}
 {%-   set model = json.merge(model, "supported_in_api", true) %}
