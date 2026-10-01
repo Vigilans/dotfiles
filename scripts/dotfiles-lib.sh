@@ -697,7 +697,8 @@ dotfiles_ensure_node() {
 # Render Nunjucks templates from <src> tree to <dst> tree, mirroring structure
 # and stripping the .j2 suffix. Non-.j2 files are ignored. Context is
 # process.env — vars published via the .env channel are accessible as
-# {{ VAR_NAME }} in templates. relative_path is the output path relative to dst.
+# {{ VAR_NAME }} in templates. os.platform identifies the rendering platform;
+# relative_path is the output path relative to dst.
 #
 # nunjucks is loaded ephemerally via npx (cached in ~/.npm/_npx after first
 # call). npx adds the install dir to PATH but not to node's require resolution,
@@ -746,7 +747,7 @@ render_templates_nunjucks() {
                     const profile = path.dirname(src);
                     console.log('RENDER: ' + path.join(path.relative(profile, src), r) + ' => ' + path.relative(profile, out));
                     fs.mkdirSync(path.dirname(out), { recursive: true });
-                    fs.writeFileSync(out, env.render(r, { ...context, os: { environ: context }, relative_path }));
+                    fs.writeFileSync(out, env.render(r, { ...context, os: { environ: context, platform: process.platform }, relative_path }));
                 }
             }
         })('');

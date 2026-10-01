@@ -69,7 +69,7 @@
     runs in code mode, where an agent role's own description reaches the model
     only if it goes looking for it, so the spawn protocol is spelled out in the
     prompt instead. -#}
-{%- set vision_delegation %}
+{%- set visual_delegation %}
 ## Visual input delegation
 
 You do not have visual understanding. Image content may be represented by the
@@ -78,15 +78,15 @@ text as a signal that the original image is unavailable to you, not as a
 description of the image.
 
 When the answer depends on visual content, delegate its inspection to the
-`vision` agent. Delegate instead of reconstructing the content yourself: do
+`multimodal` agent. Delegate instead of reconstructing the content yourself: do
 not decode, render, sample, or otherwise analyze the file to substitute for
 visual inspection.
 {% if multi_agent_version == "v1" %}
-Spawn it with `agent_type="vision"` and `fork_context=false`; a full-context
+Spawn it with `agent_type="multimodal"` and `fork_context=false`; a full-context
 fork cannot select a different agent type. Pass the exact visual question and
 every source explicitly through `items`:
 
-`agent_type="vision", fork_context=false, items=[{"type":"text",
+`agent_type="multimodal", fork_context=false, items=[{"type":"text",
 "text":"<exact visual question>"},{"type":"local_image",
 "path":"<absolute image path>"}]`
 
@@ -100,14 +100,14 @@ questions about the same sources with `send_input` on the same agent, calling
 `resume_agent` first if it was closed, and pass a new source through
 `send_input.items`.
 {% else %}
-Spawn it with `agent_type="vision"`, a short descriptive `task_name`, the
+Spawn it with `agent_type="multimodal"`, a short descriptive `task_name`, the
 appropriate `fork_turns`, and a `message` holding the exact visual question
 and every relevant source:
 
-`agent_type="vision", task_name="inspect_image", fork_turns="1",
+`agent_type="multimodal", task_name="inspect_image", fork_turns="1",
 message="<exact visual question>"`
 
-`task_name` only labels the child thread; naming it `vision` does not select
+`task_name` only labels the child thread; naming it `multimodal` does not select
 the role. Use `fork_turns="1"` for an image attached in the latest turn, the
 smallest positive value that includes the image-bearing turn for an older
 attachment, and `fork_turns="none"` when the source is reachable only through
@@ -115,13 +115,40 @@ a path or URL, naming that exact source in the message. An attachment's
 displayed path does not make it path-only. If the required turn cannot be
 identified, ask for the image to be reattached or for an accessible path.
 
-Reuse the same vision agent for further questions about the same sources:
+Reuse the same multimodal agent for further questions about the same sources:
 steer it with `send_message` while it runs, and start another turn with
 `followup_task` once it is idle.
 {% endif %}
-Use the vision agent's report as visual evidence and perform the final
+Use the multimodal agent's report as visual evidence and perform the final
 synthesis yourself. If visual delegation is unavailable or fails, state that
 the visual content could not be inspected.
+{% endset %}
+{%- set audio_input %}
+## Audio input
+
+You can hear audio attached to the conversation. Listen to it directly to transcribe speech, answer questions about its content, and provide estimated timestamps when the task asks when something happens.
+
+To hear a local audio file, read and Base64-encode it, then pass the result to `audio()` in the same code-mode script. Use one `exec_command` call solely for encoding and omit `max_output_tokens` on that call so its Base64 output stays complete. Run any conversion or excerpt extraction in another `exec_command` call; separate shell lines within one call share the returned output. Pass only the encoding call's Base64 output to `audio()`. Keep the Base64 inside the script so only the audio reaches you:
+
+```js
+const r = await tools.exec_command({
+{%- if os.platform == "win32" %}
+  cmd: String.raw`[Convert]::ToBase64String([IO.File]::ReadAllBytes('C:\path\to\file.wav'))`
+{%- else %}
+  cmd: "base64 < '/path/to/file.wav'"
+{%- endif %}
+});
+audio("data:audio/wav;base64," + r.output.replace(/\s/g, ""));
+```
+
+Use the MIME type matching the audio file in the data URL.
+
+If the tool result reports omitted audio or an audio-processing error, fix the input delivery and resend the audio before analyzing its content.
+{% endset %}
+{%- set audio_delegation %}
+## Audio and video input delegation
+
+For audio or video analysis, find and use the `multimodal` subagent. Its description explains how to pass the media to it.
 {% endset %}
 {#- Aliases sharing one model collapse into a single catalog entry (Codex keys
     on slug = the model name sent to the API).
@@ -227,12 +254,14 @@ the visual content could not be inspected.
 {%-   set modalities = (entry.modalities or "text,image").split(",") %}
 {%-   set model = json.merge(model, "input_modalities",
         modalities if modalities.includes("image") else modalities.concat("image")) %}
+{%-   set input_instructions = audio_input if modalities.includes("audio") else audio_delegation %}
 {%-   if not modalities.includes("image") %}
-{%-     set model = json.merge(model, "base_instructions",
-          (model.base_instructions or model.model_messages.instructions_template) + vision_delegation) %}
-{%-     set model = json.merge(model, "model_messages", json.merge(model.model_messages,
-          "instructions_template", model.model_messages.instructions_template + vision_delegation)) %}
+{%-     set input_instructions = visual_delegation + input_instructions %}
 {%-   endif %}
+{%-   set model = json.merge(model, "base_instructions",
+        (model.base_instructions or model.model_messages.instructions_template) + input_instructions) %}
+{%-   set model = json.merge(model, "model_messages", json.merge(model.model_messages,
+        "instructions_template", model.model_messages.instructions_template + input_instructions)) %}
 {%-   set _ = models.push(model) %}
 {%- endfor -%}
 {{ { "models": models } | dump(2) }}
