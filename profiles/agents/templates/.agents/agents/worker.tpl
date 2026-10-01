@@ -22,6 +22,6 @@ Do not commit, push, create pull requests, or perform other externally visible a
 Return the implemented outcome, files changed, validation performed and its results, and any remaining gaps or blockers.
 {% endset %}
 {{- render_agent("WORKER", description, instructions, {
-    "CODEX": {"model":"gpt-5.6-sol","effort":"low"},
-    "CLAUDE_CODE": {"model":"opus","effort":"low"}
+    "CODEX": {"model":"gpt-6.1-sol","effort":"low"},
+    "CLAUDE_CODE": {"model":"sonnet","effort":"low"}
 }) }}

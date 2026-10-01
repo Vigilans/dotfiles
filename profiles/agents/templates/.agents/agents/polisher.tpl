@@ -177,5 +177,5 @@ For detect requests, make sure the response names each pattern found with a quot
 {% endset %}
 {{- render_agent("POLISHER", description, instructions, {
     "CODEX": {"model":"gpt-6-astra","effort":"medium","sandbox_mode":"read-only"},
-    "CLAUDE_CODE": {"model":"haiku"}
+    "CLAUDE_CODE": {"model":"opus"}
 }) }}
