@@ -172,6 +172,8 @@ If the cloned external repo isn't already a framework profile (no `name=` and `s
 - Independent: install/uninstall of one profile must not break others
 - No reaching into sibling profiles' directories
 - Declare genuine dependencies via `depends=(...)`
+- Adding a new README section requires explicit user approval. Update existing configuration tables in place to reflect requested configuration changes.
+- Adding tracked tests is **FORBIDDEN**. Keep task-specific checks and one-time migration scripts in `$DOTFILES_ROOT/tmp/`.
 
 ## Reference
 
