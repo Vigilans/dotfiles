@@ -66,6 +66,13 @@
 {%-     set plugins = toml.merge(plugins, plugin_id, plugin) %}
 {%-   endif %}
 {%- endfor %}
+{#- Exclude Claude-only plugins from onboarding imports. -#}
+{%- set claude_marketplace = json.parse(fs.readFile(dst + "/.local/share/agents/.claude-plugin/marketplace.json")) %}
+{%- for entry in claude_marketplace.plugins %}
+{%-   set plugin_id = entry.name + "@" + claude_marketplace.name %}
+{%-   set plugin = toml.merge(config.plugins[plugin_id] or {}, "enabled", false) %}
+{%-   set plugins = toml.merge(plugins, plugin_id, plugin) %}
+{%- endfor %}
 {%- set config = toml.merge(config, "plugins", plugins) %}
 
 {#- Multi-agent -#}
